@@ -23,9 +23,9 @@ public:
     std::vector<GLuint> ShaderProgram_ids;
     std::vector<size_t> VertexLens;
 
-    Program(uint16_t WindowWidth, uint16_t WindowHeight){
-        this->WindowWidth = WindowWidth;
-        this->WindowHeight = WindowHeight;
+    Program(double WindowWidth, double WindowHeight){
+        this->WindowWidth = (float)WindowWidth;
+        this->WindowHeight = (float)WindowHeight;
     }
 
     bool AddRectangle(uint16_t x, uint16_t y, uint16_t width, uint16_t height){
@@ -243,7 +243,10 @@ int main(){
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context = emscripten_webgl_create_context("#canvas", &attrs);
     emscripten_webgl_make_context_current(context);
 
-    program = new Program(800, 600);
+    double canvasWidth, canvasHeight;
+    EMSCRIPTEN_RESULT res = emscripten_get_element_css_size("#canvas", &canvasWidth, &canvasHeight);
+
+    program = new Program(canvasWidth, canvasHeight);
 
     GLuint shader = program->CreateShaderProgram("./shaders/vertex.glsl", "./shaders/fragment.glsl");
 
