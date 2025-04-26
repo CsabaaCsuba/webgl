@@ -2,7 +2,7 @@
 #include <EGL/egl.h>
 #include <emscripten.h>
 #include <emscripten/html5.h>
-#include <stdio.h>
+#include <math.h>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -119,7 +119,7 @@ public:
         glBufferData(GL_ARRAY_BUFFER, sizeof(rec_vertices), rec_vertices, GL_STATIC_DRAW); //GL_STATIC_DRAW means it won't be changed
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
         glEnableVertexAttribArray(0);
-        std::cout << "vertex lens: " << sizeof(rec_indices)/sizeof(GLuint) << std::endl;
+        // std::cout << "vertex lens: " << sizeof(rec_indices)/sizeof(GLuint) << std::endl;
         this->VertexLens.push_back(sizeof(rec_indices)/sizeof(GLuint));
 
         EBO_ids.push_back(0);
@@ -130,6 +130,83 @@ public:
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(rec_indices), rec_indices, GL_STATIC_DRAW);
 
         return true;
+    }
+
+    bool AddCircle(uint16_t x, uint16_t y, uint16_t r, uint16_t precision) {
+        const int segments = precision; // Number of segments to approximate the circle
+        std::vector<float> vertices;
+        std::vector<GLuint> indices;
+        
+        // Center point
+        float center_x = (x / this->WindowWidth) * 2 - 1;
+        float center_y = 1 - (y / this->WindowHeight) * 2;
+        float center_z = 0.0f;
+        
+        // Radius in normalized coordinates
+        float radius_x = (r / this->WindowWidth) * 2;
+        float radius_y = (r / this->WindowHeight) * 2;
+        
+        // Add center point
+        vertices.push_back(center_x);
+        vertices.push_back(center_y);
+        vertices.push_back(center_z);
+        
+        // Add points around the circle
+        for (int i = 0; i <= segments; i++) {
+            float angle = 2.0f * M_PI * float(i) / float(segments);
+            float x_pos = center_x + radius_x * cos(angle);
+            float y_pos = center_y + radius_y * sin(angle);
+            std::cout << i << ". angle: " << angle << "position: " << x_pos << "x" << y_pos << "y" << std::endl;
+            
+            vertices.push_back(x_pos);
+            vertices.push_back(y_pos);
+            vertices.push_back(center_z);
+        }
+        
+        // Create indices for triangle fan
+        for (int i = 1; i <= segments; i++) {
+            indices.push_back(0);       // Center point
+            indices.push_back(i);
+            indices.push_back(i + 1);
+        }
+        // Close the circle
+        indices.push_back(0);
+        indices.push_back(segments);
+        indices.push_back(1);
+        
+        // Create VAO, VBO, and EBO
+        VAO_ids.push_back(0);
+        glGenVertexArrays(1, &VAO_ids.back());
+        glBindVertexArray(VAO_ids.back());
+        
+        VBO_ids.push_back(0);
+        GLuint* CurrentBufferPtr = &VBO_ids.back();
+        glGenBuffers(1, CurrentBufferPtr);
+        glBindBuffer(GL_ARRAY_BUFFER, *CurrentBufferPtr);
+        
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
+        glEnableVertexAttribArray(0);
+        
+        this->VertexLens.push_back(indices.size());
+        
+        EBO_ids.push_back(0);
+        CurrentBufferPtr = &EBO_ids.back();
+        glGenBuffers(1, CurrentBufferPtr);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *CurrentBufferPtr);
+        
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
+        
+        return true;
+    }
+
+    void DrawShape(size_t VAO_idx, size_t Shader_idx){
+        GLuint current_vao = this->VAO_ids[VAO_idx];
+        glUseProgram(this->ShaderProgram_ids[Shader_idx]);
+        glBindVertexArray(current_vao);
+        glDrawElements(GL_TRIANGLES, VertexLens[VAO_idx], GL_UNSIGNED_INT, 0);
+
+        glBindVertexArray(0);
     }
 
     static void DrawShape(GLuint VAO_id, GLuint ShaderProgram_id, GLuint VertexLength){
@@ -201,7 +278,7 @@ void MainLoop(){
 
     Program::DrawShape(program->VAO_ids[0], program->ShaderProgram_ids[0], program->VertexLens[0]);
 
-    
+    program->DrawShape(1, 0);
 
     //this might not work
     eglSwapBuffers(eglGetCurrentDisplay(), eglGetCurrentSurface(EGL_DRAW));
@@ -222,6 +299,8 @@ int main(){
     GLuint shader = program->CreateShaderProgram("./shaders/vertex.glsl", "./shaders/fragment.glsl");
 
     program->AddRectangle(100, 100, 100, 100);
+
+    program->AddCircle(300, 300, 75, 180);
 
     emscripten_set_main_loop(MainLoop, 0, 1);
 
