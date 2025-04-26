@@ -136,6 +136,8 @@ public:
         const int segments = precision; // Number of segments to approximate the circle
         std::vector<float> vertices;
         std::vector<GLuint> indices;
+
+        float angle = 2.0f * M_PI / float(segments);
         
         // Center point
         float center_x = (x / this->WindowWidth) * 2 - 1;
@@ -153,9 +155,9 @@ public:
         
         // Add points around the circle
         for (int i = 0; i <= segments; i++) {
-            float angle = 2.0f * M_PI * float(i) / float(segments);
-            float x_pos = center_x + radius_x * cos(angle);
-            float y_pos = center_y + radius_y * sin(angle);
+            
+            float x_pos = center_x + radius_x * cos(angle*i);
+            float y_pos = center_y + radius_y * sin(angle*i);
             std::cout << i << ". angle: " << angle << "position: " << x_pos << "x" << y_pos << "y" << std::endl;
             
             vertices.push_back(x_pos);
