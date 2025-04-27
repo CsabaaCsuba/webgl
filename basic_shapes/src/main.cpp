@@ -10,7 +10,7 @@
 #include <vector>
 #include <emscripten/fetch.h>
 #include <string.h>
-#include "../emscripten_fetch/fetch.hpp"
+#include "../include/emscripten_fetch.hpp"
 
 class Program{
 private:

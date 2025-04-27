@@ -1,6 +1,6 @@
 #pragma once
 #include <GLES3/gl3.h>
-#include "../emscripten_fetch/fetch.hpp"
+#include "../include/emscripten_fetch.hpp"
 
 class Shader {
 public:

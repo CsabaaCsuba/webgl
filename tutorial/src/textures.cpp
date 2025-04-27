@@ -4,25 +4,32 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include <cmath>
-#include "../emscripten_fetch/fetch.hpp"
 #include "ShaderClass.hpp"
 #include "VAO.hpp"
 #include "EBO.hpp"
+#include "Texture.hpp"
+#define STB_IMAGE_IMPLEMENTATION
+#include <../include/stb_image.h>
 
 VAO* VAO1;
 Shader* shaderProgram;
+Texture* popCat;
+GLuint uniformID;
 
 void MainLoop(){
     glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
     // Clean the back buffer and assign the new color to it
     glClear(GL_COLOR_BUFFER_BIT);
     // Tell OpenGL which Shader Program we want to use
-    glUseProgram(shaderProgram->ID);
-    // Bind the VAO so OpenGL knows to use it
-    glBindVertexArray(VAO1->ID);
-    // Draw primitives, number of indices, datatype of indices, index of indices
-    glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
+    shaderProgram->Activate();
 
+    glUniform1f(uniformID, 0.5f);
+
+    popCat->Bind();
+    // Bind the VAO so OpenGL knows to use it
+    VAO1->Bind();
+    // Draw primitives, number of indices, datatype of indices, index of indices
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
     //this might not work
     eglSwapBuffers(eglGetCurrentDisplay(), eglGetCurrentSurface(EGL_DRAW));
@@ -46,24 +53,21 @@ int main()
 
 	// Vertices coordinates
 	GLfloat vertices[] =
-	{		//coordinates									//colors
-		-0.5f, -0.5f * float(sqrt(3)) * 1 / 3, 0.0f,     0.8f, 0.3f,  0.02f, // Lower left corner
-		0.5f, -0.5f * float(sqrt(3)) * 1 / 3, 0.0f,     0.8f, 0.3f,  0.02f, // Lower right corner
-		0.0f,  0.5f * float(sqrt(3)) * 2 / 3, 0.0f,     1.0f, 0.6f,  0.32f, // Upper corner
-	   -0.25f, 0.5f * float(sqrt(3)) * 1 / 6, 0.0f,     0.9f, 0.45f, 0.17f, // Inner left
-		0.25f, 0.5f * float(sqrt(3)) * 1 / 6, 0.0f,     0.9f, 0.45f, 0.17f, // Inner right
-		0.0f, -0.5f * float(sqrt(3)) * 1 / 3, 0.0f,     0.8f, 0.3f,  0.02f  // Inner down
+	{		//coordinates       //colors            //texture coordinate description
+        -0.5f, -0.5f, 0.0f,     1.0f, 0.0f, 0.0f,	0.0f, 0.0f, // Lower left corner
+        -0.5f,  0.5f, 0.0f,     0.0f, 1.0f, 0.0f,	0.0f, 1.0f, // Upper left corner
+         0.5f,  0.5f, 0.0f,     0.0f, 0.0f, 1.0f,	1.0f, 1.0f, // Upper right corner
+         0.5f, -0.5f, 0.0f,     1.0f, 1.0f, 1.0f,	1.0f, 0.0f  // Lower right corner
 	};
 
 	// Indices for vertices order
 	GLuint indices[] =
 	{
-		0, 3, 5, // Lower left triangle
-		3, 2, 4, // Upper triangle
-		5, 4, 1 // Lower right triangle
+		0, 2, 1,
+        0, 3, 2
 	};
 
-	shaderProgram = new Shader("./shaders/default.vert", "./shaders/default.frag");
+	shaderProgram = new Shader("./shaders/texture.vert", "./shaders/texture.frag");
 
 	VAO1 = new VAO();
 	VAO1->Bind();
@@ -73,15 +77,25 @@ int main()
 	EBO EBO1(indices, sizeof(indices));
 
 	// VAO1->LinkVBO(VBO1, 0);
-	VAO1->LinkAttrib(VBO1, 0, 3, GL_FLOAT, sizeof(float)*6, (void*)0);
-	VAO1->LinkAttrib(VBO1, 1, 3, GL_FLOAT, sizeof(float)*6, (void*)(sizeof(float)*3));
+	VAO1->LinkAttrib(VBO1, 0, 3, GL_FLOAT, sizeof(float)*8, (void*)0);
+	VAO1->LinkAttrib(VBO1, 1, 3, GL_FLOAT, sizeof(float)*8, (void*)(sizeof(float)*3));
+    VAO1->LinkAttrib(VBO1, 2, 2, GL_FLOAT, sizeof(float)*8, (void*)(sizeof(float)*6));
 
-	emscripten_set_main_loop(MainLoop, 0, 1);
-
-
-	VAO1->Unbind();
+    VAO1->Unbind();
 	VBO1.Unbind();
 	EBO1.Unbind();
+
+    uniformID = glGetUniformLocation(shaderProgram->ID, "scale");
+
+    popCat = new Texture("./textures/pop_cat.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
+    popCat->texUnit(shaderProgram, "tex0", 0); 
+
+	emscripten_set_main_loop(MainLoop, 0, 1);
+	
+    VAO1->Delete();
+	VBO1.Delete();
+	EBO1.Delete();
+    popCat->Delete();
 	shaderProgram->Delete();
 
 	return 0;
