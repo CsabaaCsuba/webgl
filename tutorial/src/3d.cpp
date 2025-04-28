@@ -20,13 +20,100 @@
 VAO* VAO1;
 Shader* shaderProgram;
 Texture* popCat;
-GLuint uniformID;
+Camera* camera;
 float width, height;
 size_t indicesSize;
 
-float rotation = 0.0f;
-//base time
-auto prevTime = std::chrono::high_resolution_clock::now();;
+bool isButtonHidden = false;
+
+//userData can be ignored for now...
+EM_BOOL key_callback(int eventType, const EmscriptenKeyboardEvent *e, void *userData) {
+    if (eventType == EMSCRIPTEN_EVENT_KEYDOWN) {
+      printf("Key down: %s, code: %s\n", e->key, e->code);
+      
+      // Check for specific keys
+      if (strcmp(e->code, "KeyW") == 0) {
+        camera->Position += camera->speed * camera->Orientation;
+      }
+      if (strcmp(e->code, "KeyA") == 0) {
+        camera->Position += camera->speed * -glm::normalize(glm::cross(camera->Orientation, camera->Up));
+      }
+      if (strcmp(e->code, "KeyS") == 0) {
+        camera->Position += camera->speed * -camera->Orientation;
+      }
+      if (strcmp(e->code, "KeyD") == 0) {
+        camera->Position += camera->speed * glm::normalize(glm::cross(camera->Orientation, camera->Up));
+      }
+      if (strcmp(e->code, "Space") == 0) {
+        camera->Position += camera->speed * -camera->Up;
+        
+      }
+      if (strcmp(e->code, "ControlLeft") == 0) {
+        camera->Position += camera->speed * camera->Up;;
+      }
+      if (strcmp(e->code, "ShiftLeft") == 0) {
+        camera->speed = 0.4f;
+      }
+    } else if (eventType == EMSCRIPTEN_EVENT_KEYUP) {
+      printf("Key up: %s\n", e->key);
+      if (strcmp(e->code, "ShiftLeft") == 0) {
+        camera->speed = 0.1f;
+      }
+    }
+
+    if (strlen(e->key) > 1) {
+        printf("Special or non-ASCII key detected\n");
+    }
+    
+    // You can also check properties like e->locale to get the user's language
+    printf("User locale: %s\n", e->locale);
+    
+    // Return true to prevent the default browser action
+    return EM_TRUE;
+}
+
+EM_BOOL mouse_click_callback(int eventType, const EmscriptenMouseEvent *e, void *userData) {
+  if (eventType == EMSCRIPTEN_EVENT_MOUSEDOWN) {
+      printf("Mouse clicked at coordinates: (%d, %d)\n", e->clientX, e->clientY);
+      
+      // Check which button was pressed
+      if (e->button == 0) { // Left mouse button
+          printf("Left button clicked\n");
+
+          float rotX = camera->sensitivity * (float)(e->clientY - (height / 2)) / height;
+          float rotY = camera->sensitivity * (float)(e->clientX - (width / 2)) / width;
+
+          glm::vec3 right = glm::normalize(glm::cross(camera->Orientation, camera->Up));
+          glm::vec3 newOrientation = glm::rotate(camera->Orientation, glm::radians(-rotX), right);
+
+          if (!(glm::angle(newOrientation, camera->Up) <= glm::radians(5.0f)) &&
+              !(glm::angle(newOrientation, -camera->Up) <= glm::radians(5.0f))) {
+              camera->Orientation = newOrientation;
+          }
+
+          camera->Orientation = glm::rotate(camera->Orientation, glm::radians(-rotY), camera->Up);
+
+          // Set cursor position to center of the screen
+          // emscripten_set_mousemove_callback(EMSCRIPTEN_EVENT_TARGET_DOCUMENT, 0, 1, [](int, const EmscriptenMouseEvent* e, void*){
+          //     emscripten_request_pointerlock("#canvas", 1);
+          //     return EM_TRUE;
+          // });
+      } else if (e->button == 1) {
+          printf("Middle button clicked\n");
+      } else if (e->button == 2) {
+          printf("Right button clicked\n");
+      }
+      
+      // Check modifier keys
+      if (e->ctrlKey) printf("Ctrl key was pressed during click\n");
+      if (e->shiftKey) printf("Shift key was pressed during click\n");
+      if (e->altKey) printf("Alt key was pressed during click\n");
+  }
+  
+  return EM_TRUE; // Return true to prevent default browser action
+}
+
+
 
 void MainLoop(){
     glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
@@ -35,37 +122,8 @@ void MainLoop(){
     // Tell OpenGL which Shader Program we want to use
     shaderProgram->Activate();
 
-    //rotation calculation based on current time
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> diff  = currentTime - prevTime;
-    if (diff.count() >= 1 / 60){
-        rotation += 0.5f;
-        prevTime = currentTime;
-    }
-
-    //model, view, and projection are initialized as 4x4 matrices with 1 everywhere, so the necessary projection calculations can be done
-    glm::mat4 model = glm::mat4(1.0f);
-    glm::mat4 view = glm::mat4(1.0f);
-    glm::mat4 projection = glm::mat4(1.0f);
-
+    camera->Matrix(45.0f, 0.1f, 100.0f, shaderProgram, "camMatrix");
     
-    model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 1.0f, 0.0f));
-    view = glm::translate(view, glm::vec3(0.0f, -0.5f, -2.0f));
-    projection = glm::perspective(glm::radians(45.0f), (float)(width/height), 0.1f, 100.0f);
-
-    //getting the uniform locations
-    GLint modelLocation = glGetUniformLocation(shaderProgram->ID, "model");
-    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
-
-    GLint viewLocation = glGetUniformLocation(shaderProgram->ID, "view");
-    glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
-
-    GLint projectionLocation = glGetUniformLocation(shaderProgram->ID, "projection");
-    glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
-
-
-
-    glUniform1f(uniformID, 0.5f);
 
     popCat->Bind();
     // Bind the VAO so OpenGL knows to use it
@@ -90,6 +148,8 @@ int main()
 
     double canvasWidth, canvasHeight;
     EMSCRIPTEN_RESULT res = emscripten_get_element_css_size("#canvas", &canvasWidth, &canvasHeight);
+
+
 
 	glViewport(0, 0, (GLsizei)canvasWidth, (GLsizei)canvasHeight);
 
@@ -137,7 +197,6 @@ int main()
 	VBO1.Unbind();
 	EBO1.Unbind();
 
-    uniformID = glGetUniformLocation(shaderProgram->ID, "scale");
 
     popCat = new Texture("./textures/pop_cat.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
     popCat->texUnit(shaderProgram, "tex0", 0); 
@@ -145,8 +204,14 @@ int main()
     //depth testing is necessary in 3d, so opengl knows which pixel to put on the screen
     glEnable(GL_DEPTH_TEST);
 
+    camera = new Camera((int)width, (int)height, glm::vec3(0.0f, 0.0f, 2.0f));    
+
+    emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, key_callback);
+    emscripten_set_mousedown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, NULL, 1, mouse_click_callback);
 	emscripten_set_main_loop(MainLoop, 0, 1);
-	
+
+
+
     VAO1->Delete();
 	VBO1.Delete();
 	EBO1.Delete();

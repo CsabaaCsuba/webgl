@@ -1,6 +1,7 @@
 #pragma once
 #include <GLES3/gl3.h>
 #include <emscripten/html5.h>
+#define GLM_ENABLE_EXPERIMENTAL 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -18,7 +19,7 @@ public:
     int width;
     int height;
 
-    float speed = 0.1f;
+    float speed = 0.02f;
     float sensitivity = 100.0f;
 
     Camera(int width, int height, glm::vec3 position){
@@ -38,7 +39,10 @@ public:
 
     }
 
-    void Inputs(){
 
+      
+
+    void Inputs(){
+        
     }
 };
