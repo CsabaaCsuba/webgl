@@ -10,6 +10,7 @@
 #include <vector>
 #include <emscripten/fetch.h>
 #include <string.h>
+#include "Shape.hpp"
 #include "../include/emscripten_fetch.hpp"
 
 class Program{
@@ -148,7 +149,6 @@ public:
         
         return true;
     }
-
     void DrawShape(size_t VAO_idx, size_t Shader_idx){
         GLuint current_vao = this->VAO_ids[VAO_idx];
         glUseProgram(this->ShaderProgram_ids[Shader_idx]);
