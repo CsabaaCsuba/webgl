@@ -34,7 +34,7 @@ public:
         std::vector<GLuint> indices;
 
         //there are 4 x, y points needed for a "mesh square"
-        for (int i=4*2; i<MESH_COUNT*2*5; i+=4*2){
+        for (int i=4*2; i<4*2*(MESH_COUNT+1); i+=4*2){
             //things are divided by mesh_count*2, so the first 4 coordinate points won't be zeroes
 
             //up right coordinate x

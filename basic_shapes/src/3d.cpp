@@ -150,7 +150,7 @@ int main(){
 
     glViewport(0, 0, (GLsizei)canvasWidth, (GLsizei)canvasHeight);
 
-    program = new Program(canvasWidth, canvasHeight, glm::vec3(0.0f, 2.0f, 1.0f));
+    program = new Program(canvasWidth, canvasHeight, glm::vec3(0.0f, 1.1f, 3.0f));
 
     //todo: write shaders with projection matrices
     GLuint shader = program->CreateShaderProgram("./shaders/3d.vert", "./shaders/3d_white.frag");

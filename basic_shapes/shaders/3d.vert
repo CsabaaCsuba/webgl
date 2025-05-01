@@ -8,5 +8,5 @@ uniform mat4 CamMatrix;
 
 void main()
 {
-   gl_Position = CamMatrix * vec4(inputPos.x, 1.0, inputPos.y, 1.0);
+   gl_Position = CamMatrix * vec4(inputPos.x, 0.0, inputPos.y, 1.0);
 }
