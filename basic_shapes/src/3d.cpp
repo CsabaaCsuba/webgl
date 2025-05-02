@@ -12,17 +12,15 @@
 #include <string.h>
 #include "Shape.hpp"
 #include "Camera.hpp"
+#include "CanvasManagement.hpp"
 #include "../include/emscripten_fetch.hpp"
 
 class Program{
-private:
+public:
     float WindowWidth;
     float WindowHeight;
-    
-public:
     Camera cam;
     std::vector<Shape> shapes;
-    std::vector<GLuint> ShaderProgram_ids;
 
     Program(double WindowWidth, double WindowHeight, glm::vec3 position){
         this->WindowWidth = (float)WindowWidth;
@@ -36,12 +34,21 @@ public:
     }
 
 
-    void DrawShape(size_t idx, size_t program_idx){
-        GLuint current_vao = this->shapes[idx].VAO;
-        glUseProgram(this->ShaderProgram_ids[program_idx]);
+    void DrawShape(Shape shape){
+        GLuint current_vao = shape.VAO;
+        glUseProgram(shape.shaderprogram_id.value());
         glBindVertexArray(current_vao);
-        GLshort OpenglShape = (this->shapes[idx].shape_type == ShapeType::MESH) ? GL_LINE_LOOP : GL_TRIANGLES;
-        glDrawElements(OpenglShape, this->shapes[idx].vertex_len, GL_UNSIGNED_INT, 0);
+
+        if (shape.shape_type == ShapeType::MESH){
+            for (int i = 0; i < shape.vertex_len; i += 4) {
+                glDrawArrays(GL_LINE_LOOP, i, 4);
+            }
+            
+        }
+        else {
+            glDrawElements(GL_TRIANGLES, shape.vertex_len, GL_UNSIGNED_INT, 0);
+        }
+        
 
         glBindVertexArray(0);
     }
@@ -71,14 +78,16 @@ public:
         return shader;
     }
 
-    bool CreateShaderProgram(const char *vertex_source, const char *fragment_source){
+    static GLuint CreateShaderProgram(const char *vertex_source, const char *fragment_source){
         GLuint vertexShader_id = Program::CompileShader(GL_VERTEX_SHADER, vertex_source);
-        if (vertexShader_id == 0) return false;
+        if (vertexShader_id == 0){
+            std::cout << "vertex shader compilation failed..." << std::endl;
+        }
     
         GLuint fragmentShader_id = Program::CompileShader(GL_FRAGMENT_SHADER, fragment_source);
         if (fragmentShader_id == 0) {
             glDeleteShader(vertexShader_id);
-            return false;
+            std::cout << "fragment shader compilation failed..." << std::endl;
         }
     
         GLuint shaderProgram_id = glCreateProgram();
@@ -102,15 +111,25 @@ public:
             glDeleteShader(vertexShader_id);
             glDeleteShader(fragmentShader_id);
             glDeleteProgram(shaderProgram_id);
-            return false;
         }
-    
-        ShaderProgram_ids.push_back(shaderProgram_id);
     
         glDeleteShader(vertexShader_id);
         glDeleteShader(fragmentShader_id);
-    
-        return true;
+
+        return shaderProgram_id;
+    }
+
+    void UseShader(size_t idx){
+        if (idx > shapes.size()-1){
+            std::cout << "IDX is larger than the available amount of shapes" << std::endl;
+            return;
+        }
+
+        if (!shapes[idx].shaderprogram_id){
+            std::cout << "ShaderProgram ID is not set yet..." << std::endl;
+            return;
+        }
+        glUseProgram(shapes[idx].shaderprogram_id.value());
     }
     
 };
@@ -123,13 +142,17 @@ void MainLoop(){
     glClearColor(0.2, 0.2, 0.2, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    //activate the first compiled shader
-    glUseProgram(program->ShaderProgram_ids[0]);
+    program->UseShader(0);
 
-    //supply the shader the matrix value
-    program->cam.Matrix(90.0f, 0.02, 100.0f, program->ShaderProgram_ids[0], "CamMatrix");
+    program->DrawShape(program->shapes[0]);
 
-    program->DrawShape(0, 0);
+    // //activate the first compiled shader
+    // program->UseShader(0);
+
+    // //supply the shader the matrix value
+    // program->cam.Matrix(90.0f, 0.02, 100.0f, program->shapes[0].shaderprogram_id.value(), "CamMatrix");
+
+    // program->DrawShape(program->shapes[0]);
 
     //this might not work
     eglSwapBuffers(display, surface);
@@ -153,9 +176,17 @@ int main(){
     program = new Program(canvasWidth, canvasHeight, glm::vec3(0.0f, 1.1f, 3.0f));
 
     //todo: write shaders with projection matrices
-    GLuint shader = program->CreateShaderProgram("./shaders/3d.vert", "./shaders/3d_white.frag");
+    GLuint shader = program->CreateShaderProgram("./shaders/3d/3d.vert", "./shaders/3d/3d_white.frag");
 
-    Shape mesh = Shape::InitMesh();
+    Shape mesh = Shape::InitMesh(5);
+
+    mesh.AssignShaderProgram(shader);
+
+
+    GLuint simple_shader = program->CreateShaderProgram("./shaders/2d/vertex.glsl", "./shaders/2d/fragment.glsl");
+    Shape lilrec = Shape::InitRectangle(10, 10, 20, 20, program->WindowWidth, program->WindowHeight);
+
+    lilrec.AssignShaderProgram(simple_shader);
 
     program->AddShape(mesh);
 
@@ -166,6 +197,8 @@ int main(){
     //this must be defined for buffer swapping (VSYNC)
     display = eglGetCurrentDisplay();
     surface = eglGetCurrentSurface(EGL_DRAW);
+    emscripten_set_click_callback("#canvas", 0, EM_TRUE, immerse);
+    emscripten_set_mousemove_callback("#canvas", 0, EM_TRUE, mouse_move);
     emscripten_set_main_loop(MainLoop, 0, 1);
 
     return 0;

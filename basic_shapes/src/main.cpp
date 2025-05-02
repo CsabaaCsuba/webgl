@@ -248,7 +248,7 @@ int main(){
 
     program = new Program(canvasWidth, canvasHeight);
 
-    GLuint shader = program->CreateShaderProgram("./shaders/vertex.glsl", "./shaders/fragment.glsl");
+    GLuint shader = program->CreateShaderProgram("./shaders/2d/vertex.glsl", "./shaders/2d/fragment.glsl");
 
     program->AddRectangle(100, 100, 100, 100);
 
