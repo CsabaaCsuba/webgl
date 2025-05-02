@@ -1,3 +1,11 @@
+#define GLM_ENABLE_EXPERIMENTAL 
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
+#include "glm/gtx/rotate_vector.hpp"
+#include "glm/gtx/vector_angle.hpp"
+#include "glm/ext/matrix_clip_space.hpp"
+#include "glm/ext/matrix_transform.hpp"
 #include <GLES3/gl3.h>
 #include <EGL/egl.h>
 #include <emscripten.h>
@@ -138,21 +146,72 @@ Program *program;
 EGLDisplay display;
 EGLSurface surface;
 
+double lastTime = 0;
+double currentTime = 0;
+double frameTime = 0;
+
 void MainLoop(){
+    currentTime = emscripten_get_now();
+    frameTime = currentTime - lastTime;
+    lastTime = currentTime;
+
+    frameTime /= 1000;
+
+    std::cout << "current frametime: " << frameTime << "s" << std::endl;
+
     glClearColor(0.2, 0.2, 0.2, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     program->UseShader(0);
+    // program->cam.
+    program->cam.Matrix(90.0f, 0.02, 100.0f, program->shapes[0].shaderprogram_id.value(), "CamMatrix");
 
     program->DrawShape(program->shapes[0]);
 
-    // //activate the first compiled shader
-    // program->UseShader(0);
+    // Now draw the rectangle cursor
+    program->UseShader(1);
+    
+    // Make sure the rectangle has valid coordinates before drawing
+    if (program->shapes[1].x_y_coords.has_value()) {
+        // Get center coordinates
+        float centerX = program->WindowWidth / 2;
+        float centerY = program->WindowHeight / 2;
+        
+        // Define a "snap" threshold - if within this many pixels, just snap to center
+        const float snapThreshold = 2.0f;
+        
+        // Calculate distance from center
+        float distX = mouseX - centerX;
+        float distY = mouseY - centerY;
+        
+        // Calculate absolute distance
+        float absDistX = std::abs(distX);
+        float absDistY = std::abs(distY);
+        
+        // Smooth movement speed (adjust as needed)
+        const float moveSpeed = 4.0f;
+        
+        // If we're very close to center, just snap to it
+        if (absDistX < snapThreshold && absDistY < snapThreshold) {
+            mouseX = centerX;
+            mouseY = centerY;
+        } else {
+            // Otherwise, move toward the center at a speed proportional to distance
+            // This creates a smoother, dampened approach
+            if (absDistX >= snapThreshold) {
+                mouseX -= (distX * frameTime * moveSpeed);
+            }
+            
+            if (absDistY >= snapThreshold) {
+                mouseY -= (distY * frameTime * moveSpeed);
+            }
+        }
 
-    // //supply the shader the matrix value
-    // program->cam.Matrix(90.0f, 0.02, 100.0f, program->shapes[0].shaderprogram_id.value(), "CamMatrix");
+        program->shapes[1].SupplyCoordinates(mouseX, mouseY, program->WindowWidth, program->WindowHeight);
+        program->DrawShape(program->shapes[1]);
+    }
 
-    // program->DrawShape(program->shapes[0]);
+    
 
     //this might not work
     eglSwapBuffers(display, surface);
@@ -175,7 +234,7 @@ int main(){
 
     program = new Program(canvasWidth, canvasHeight, glm::vec3(0.0f, 1.1f, 3.0f));
 
-    //todo: write shaders with projection matrices
+    // todo: write shaders with projection matrices
     GLuint shader = program->CreateShaderProgram("./shaders/3d/3d.vert", "./shaders/3d/3d_white.frag");
 
     Shape mesh = Shape::InitMesh(5);
@@ -184,11 +243,20 @@ int main(){
 
 
     GLuint simple_shader = program->CreateShaderProgram("./shaders/2d/vertex.glsl", "./shaders/2d/fragment.glsl");
-    Shape lilrec = Shape::InitRectangle(10, 10, 20, 20, program->WindowWidth, program->WindowHeight);
+
+    float rectWidth = 20.0f;
+    float rectHeight = 20.0f;
+    float rectX = canvasWidth / 2 - rectWidth / 2;
+    float rectY = canvasHeight / 2 - rectHeight / 2;
+    Shape lilrec = Shape::InitRectangle(rectX, rectY, rectWidth, rectHeight);
 
     lilrec.AssignShaderProgram(simple_shader);
 
     program->AddShape(mesh);
+    program->AddShape(lilrec);
+
+    mouseX = rectX;
+    mouseY = rectY;
 
     glEnable(GL_DEPTH_TEST);
 
@@ -197,8 +265,10 @@ int main(){
     //this must be defined for buffer swapping (VSYNC)
     display = eglGetCurrentDisplay();
     surface = eglGetCurrentSurface(EGL_DRAW);
+
     emscripten_set_click_callback("#canvas", 0, EM_TRUE, immerse);
-    emscripten_set_mousemove_callback("#canvas", 0, EM_TRUE, mouse_move);
+    //lilrec only lives in the main function, however it gets added as the second shape.
+    emscripten_set_mousemove_callback("#canvas", (void*)&(program->shapes[1]), EM_TRUE, mouse_move);
     emscripten_set_main_loop(MainLoop, 0, 1);
 
     return 0;

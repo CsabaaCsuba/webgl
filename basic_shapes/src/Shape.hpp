@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <vector>
+#include <array>
 #include <optional>
 #include <GLES3/gl3.h>
 
@@ -23,6 +24,7 @@ public:
     std::optional<GLuint> EBO;
     GLuint vertex_len;
     std::optional<GLuint> shaderprogram_id;
+    std::optional<std::array<float, 2>> x_y_coords;
 
     Shape(){
 
@@ -32,27 +34,14 @@ public:
         shaderprogram_id = programID;
     }
 
-    static Shape InitRectangle(uint16_t x, uint16_t y, uint16_t width, uint16_t height, float windowWidth, float windowHeight){
+    static Shape InitRectangle(float x, float y, float width, float height){
         Shape shape;
 
-        float left_up_point_x = (x / windowWidth) * 2 - 1; 
-        float left_up_point_y = 1 - (y / windowHeight) * 2; 
-    
-        float right_up_point_x = ((x + (float)width) / windowWidth) * 2 - 1;
-        float right_up_point_y = left_up_point_y; //they share y coordinates
-    
-    
-        float left_down_point_x = left_up_point_x; //they share x coordinates
-        float left_down_point_y = 1 - ((y + (float)height) / windowHeight) * 2;
-    
-        float right_down_point_x = right_up_point_x; //same coordinate
-        float right_down_point_y = left_down_point_y; //nothing has to be calculated for the right down point
-
         float rec_vertices[] = {
-            left_up_point_x, left_up_point_y, 0.0,
-            right_up_point_x, right_up_point_y, 0.0,
-            left_down_point_x, left_down_point_y, 0.0,
-            right_down_point_x, right_down_point_y, 0.0,
+            0, 0,                 // bottom-left
+            0 + width, 0,         // bottom-right
+            0, 0 + height,        // top-left
+            0 + width, 0 + height // top-right
         };
     
         GLuint rec_indices[] = {
@@ -67,7 +56,7 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, shape.VBO);
 
         glBufferData(GL_ARRAY_BUFFER, sizeof(rec_vertices), rec_vertices, GL_STATIC_DRAW); //GL_STATIC_DRAW means it won't be changed
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), NULL);
         glEnableVertexAttribArray(0);
         // std::cout << "vertex lens: " << sizeof(rec_indices)/sizeof(GLuint) << std::endl;
         // this->VertexLens.push_back(sizeof(rec_indices)/sizeof(GLuint));
@@ -82,8 +71,41 @@ public:
 
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(rec_indices), rec_indices, GL_STATIC_DRAW);
 
+        shape.x_y_coords = std::array<float, 2>{x, y};
+        // shape.x_y_coords = std::nullopt;
 
         return shape;
+    }
+
+    void SetCoordinates(float x, float y){
+        x_y_coords = std::array<float, 2>{x, y};
+        std::cout << "coordinates set to: " << x_y_coords.value()[0] << "x, " << x_y_coords.value()[1] << "y" << std::endl;
+    }
+
+    void SupplyCoordinates(float windowWidth, float windowHeight){
+        if (!shaderprogram_id.has_value()){
+            std::cout << "please assign a shaderprogram ID first!" << std::endl;
+            return;
+        }
+
+        GLint offsetLocation = glGetUniformLocation(shaderprogram_id.value(), "CurrentPositions");
+        glUniform2f(offsetLocation, x_y_coords.value()[0], x_y_coords.value()[1]);
+
+        offsetLocation = glGetUniformLocation(shaderprogram_id.value(), "ScreenSize");
+        glUniform2f(offsetLocation, windowWidth, windowHeight);
+    }
+
+    void SupplyCoordinates(float x, float y, float windowWidth, float windowHeight){
+        if (!shaderprogram_id.has_value()){
+            std::cout << "please assign a shaderprogram ID first!" << std::endl;
+            return;
+        }
+        glUseProgram(shaderprogram_id.value());
+        GLint offsetLocation = glGetUniformLocation(shaderprogram_id.value(), "CurrentPositions");
+        glUniform2f(offsetLocation, x, y);
+
+        offsetLocation = glGetUniformLocation(shaderprogram_id.value(), "ScreenSize");
+        glUniform2f(offsetLocation, windowWidth, windowHeight);
     }
 
 
@@ -122,6 +144,8 @@ public:
     glEnableVertexAttribArray(0);
 
     shape.vertex_len = line_coords.size() / 2;
+
+    shape.x_y_coords = std::nullopt;
 
     return shape;
 }
