@@ -18,7 +18,7 @@ public:
     int height;
 
     float speed = 0.02f;
-    float sensitivity = 100.0f;
+    float sensitivity = 10.0f;
 
     Camera(){
 

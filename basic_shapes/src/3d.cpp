@@ -168,50 +168,6 @@ void MainLoop(){
 
     program->DrawShape(program->shapes[0]);
 
-    // Now draw the rectangle cursor
-    program->UseShader(1);
-    
-    // Make sure the rectangle has valid coordinates before drawing
-    if (program->shapes[1].x_y_coords.has_value()) {
-        // Get center coordinates
-        float centerX = program->WindowWidth / 2;
-        float centerY = program->WindowHeight / 2;
-        
-        // Define a "snap" threshold - if within this many pixels, just snap to center
-        const float snapThreshold = 2.0f;
-        
-        // Calculate distance from center
-        float distX = mouseX - centerX;
-        float distY = mouseY - centerY;
-        
-        // Calculate absolute distance
-        float absDistX = std::abs(distX);
-        float absDistY = std::abs(distY);
-        
-        // Smooth movement speed (adjust as needed)
-        const float moveSpeed = 4.0f;
-        
-        // If we're very close to center, just snap to it
-        if (absDistX < snapThreshold && absDistY < snapThreshold) {
-            mouseX = centerX;
-            mouseY = centerY;
-        } else {
-            // Otherwise, move toward the center at a speed proportional to distance
-            // This creates a smoother, dampened approach
-            if (absDistX >= snapThreshold) {
-                mouseX -= (distX * frameTime * moveSpeed);
-            }
-            
-            if (absDistY >= snapThreshold) {
-                mouseY -= (distY * frameTime * moveSpeed);
-            }
-        }
-
-        program->shapes[1].SupplyCoordinates(mouseX, mouseY, program->WindowWidth, program->WindowHeight);
-        program->DrawShape(program->shapes[1]);
-    }
-
-    
 
     //this might not work
     eglSwapBuffers(display, surface);
@@ -266,9 +222,10 @@ int main(){
     display = eglGetCurrentDisplay();
     surface = eglGetCurrentSurface(EGL_DRAW);
 
-    emscripten_set_click_callback("#canvas", 0, EM_TRUE, immerse);
+    emscripten_set_click_callback("#canvas", (void*)&(program->cam), EM_TRUE, immerse);
     //lilrec only lives in the main function, however it gets added as the second shape.
-    emscripten_set_mousemove_callback("#canvas", (void*)&(program->shapes[1]), EM_TRUE, mouse_move);
+    emscripten_set_mousemove_callback("#canvas", (void*)&(program->cam), EM_TRUE, mouse_move);
+    emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, (void*)&(program->cam), EM_TRUE, key_callback);
     emscripten_set_main_loop(MainLoop, 0, 1);
 
     return 0;
