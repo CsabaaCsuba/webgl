@@ -1,6 +1,8 @@
 use crate::my_math::*;
 use wasm_bindgen::prelude::*;
 use web_sys::{WebGl2RenderingContext, WebGlProgram, WebGlShader};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 pub struct Shape {
     vao: u32,
@@ -10,7 +12,7 @@ pub struct Shape {
 }
 
 pub struct Camera {
-    context: WebGl2RenderingContext,
+    context: Rc<RefCell<WebGl2RenderingContext>>,
     window_width: f32,
     window_height: f32,
     position: Vec3,
@@ -19,9 +21,9 @@ pub struct Camera {
     view_matrix: Mat4,
 }
 
-impl Camera {
-    fn new(
-        context: WebGl2RenderingContext,
+impl  Camera {
+    pub fn new(
+        context: Rc<RefCell<WebGl2RenderingContext>>,
         window_width: f32,
         window_height: f32,
         position: Vec3,
@@ -51,18 +53,16 @@ impl Camera {
         };
     }
 
-    fn use_projection(&self, shader_program: &WebGlProgram, uniform_name: &str) {
+    pub fn use_projection(&self, shader_program: &WebGlProgram, uniform_name: &str) {
+        let gl = self.context.borrow();
         // Get the uniform location
-        let uniform_location = self
-            .context
-            .get_uniform_location(shader_program, uniform_name);
+        let uniform_location = gl.get_uniform_location(shader_program, uniform_name);
 
         // Convert the Mat4 to a slice of f32 values
         let matrix_data = self.view_matrix.as_array();
 
         if let Some(location) = uniform_location {
-            self.context
-                .uniform_matrix4fv_with_f32_array(Some(&location), false, &matrix_data);
+            gl.uniform_matrix4fv_with_f32_array(Some(&location), false, &matrix_data);
         } else {
             println!("Uniform location with name \"{uniform_name}\" not found!");
         }

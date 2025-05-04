@@ -4,7 +4,7 @@ use std::rc::Rc;
 use std::thread::spawn;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
-use web_sys::{WebGl2RenderingContext, WebGlProgram, WebGlShader, console};
+use web_sys::{console, window, WebGl2RenderingContext, WebGlProgram, WebGlShader, Window};
 
 mod array;
 use array::*;
@@ -81,18 +81,66 @@ async fn async_main() -> Result<(), JsValue> {
         WebGl2RenderingContext::STATIC_DRAW,
     );
 
-    // Link the position attribute in the vertex shader
-    let position = gl.get_attrib_location(&program, "position") as u32;
-    gl.vertex_attrib_pointer_with_i32(position, 2, WebGl2RenderingContext::FLOAT, false, 0, 0);
-    gl.enable_vertex_attrib_array(position);
+    gl.vertex_attrib_pointer_with_i32(0, 2, WebGl2RenderingContext::FLOAT, false, 2*size_of::<f32>() as i32, 0);
+    gl.enable_vertex_attrib_array(0);
     // Clear the canvas and draw the triangle
     gl.clear_color(0.0, 0.0, 0.0, 1.0);
-    gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
+    gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT);
     gl.draw_elements_with_f64(
         WebGl2RenderingContext::TRIANGLES,
-        indices.len() as i32,
+        indices.leni(),
         WebGl2RenderingContext::UNSIGNED_INT,
         0.0,
     );
+
+    let gl_ref: Rc<RefCell<WebGl2RenderingContext>> = Rc::new(RefCell::new(gl));
+
+    let cam = Camera::new(
+        gl_ref.clone(),
+        window.inner_width()?.as_f64().ok_or("Failed to convert width")? as f32,
+        window.inner_height()?.as_f64().ok_or("Failed to convert height")? as f32,
+        Vec3::new(0.0, 0.0, 2.0),
+        90.0,
+        0.01,
+        100.0
+    );
+
+    start_render_loop(gl_ref, program, indices.leni(), cam);
+
     Ok(())
+}
+
+
+fn start_render_loop(ref_gl: Rc<RefCell<WebGl2RenderingContext>>, program: WebGlProgram, indices_len: i32, camera: Camera) {
+    let f: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = Rc::new(RefCell::new(None));
+    let g: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = f.clone();
+
+    let ref_gl_clone = ref_gl.clone();
+
+    *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
+        let gl = ref_gl_clone.borrow();
+        // Clear screen and draw
+        gl.clear_color(0.1, 0.0, 0.15, 0.6);
+        gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
+
+        gl.use_program(Some(&program));
+        gl.draw_elements_with_f64(
+            WebGl2RenderingContext::TRIANGLES,
+            indices_len,
+            WebGl2RenderingContext::UNSIGNED_INT,
+            0.0,
+        );
+
+        // Schedule next frame
+        let window = window().unwrap();
+        window
+            .request_animation_frame(f.borrow().as_ref().unwrap().as_ref().unchecked_ref())
+            .unwrap();
+    }) as Box<dyn FnMut()>));
+
+    // Start the loop
+    window()
+        .unwrap()
+        .request_animation_frame(g.borrow().as_ref().unwrap().as_ref().unchecked_ref())
+        .unwrap();
 }

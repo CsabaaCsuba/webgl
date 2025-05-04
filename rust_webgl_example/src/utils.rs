@@ -1,6 +1,7 @@
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, RequestInit, RequestMode, Response};
+use core::ptr;
 
 pub async fn fetch_shader_code(path: &str) -> Result<String, String> {
     let mut opts = RequestInit::new();
@@ -33,4 +34,15 @@ pub async fn fetch_shader_code(path: &str) -> Result<String, String> {
     text_js_value
         .as_string()
         .ok_or_else(|| "Response text is not a string".to_string())
+}
+
+pub trait MySliceExt {
+    fn leni(&self) -> i32;
+}
+
+impl<T> MySliceExt for [T] {
+    #[inline]
+    fn leni(&self) -> i32 {
+        return self.len() as i32;
+    }
 }
