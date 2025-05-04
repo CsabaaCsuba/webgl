@@ -54,3 +54,6 @@ dkms.conf
 .vscode/settings.json
 *.wasm
 *.js
+target/
+pkg/
+Cargo.lock

@@ -153,7 +153,7 @@ public:
         glEnableVertexAttribArray(0);
         // std::cout << "vertex lens: " << sizeof(rec_indices)/sizeof(GLuint) << std::endl;
         // this->VertexLens.push_back(sizeof(rec_indices)/sizeof(GLuint));
-        shape.vertex_len = sizeof(vertices)/3;
+        shape.vertex_len = sizeof(vertices)/3; //because there are 3 data points for each vertex
 
 
         GLuint NewEBO;
