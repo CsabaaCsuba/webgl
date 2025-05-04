@@ -16,6 +16,7 @@
 #include "Camera.hpp"
 #define STB_IMAGE_IMPLEMENTATION
 #include <../include/stb_image.h>
+#include "MyCanvas.hpp"
 
 VAO *VAO1;
 Shader *shaderProgram;
@@ -23,134 +24,33 @@ Texture *popCat;
 Camera *camera;
 float width, height;
 size_t indicesSize;
+EGLDisplay display;
+EGLSurface surface;
 
-bool isButtonHidden = false;
-
-// userData can be ignored for now...
-EM_BOOL key_callback(int eventType, const EmscriptenKeyboardEvent *e, void *userData)
-{
-    if (eventType == EMSCRIPTEN_EVENT_KEYDOWN)
-    {
-        printf("Key down: %s, code: %s\n", e->key, e->code);
-
-        // Check for specific keys
-        if (strcmp(e->code, "KeyW") == 0)
-        {
-            camera->Position += camera->speed * camera->Orientation;
-        }
-        if (strcmp(e->code, "KeyA") == 0)
-        {
-            camera->Position += camera->speed * -glm::normalize(glm::cross(camera->Orientation, camera->Up));
-        }
-        if (strcmp(e->code, "KeyS") == 0)
-        {
-            camera->Position += camera->speed * -camera->Orientation;
-        }
-        if (strcmp(e->code, "KeyD") == 0)
-        {
-            camera->Position += camera->speed * glm::normalize(glm::cross(camera->Orientation, camera->Up));
-        }
-        if (strcmp(e->code, "Space") == 0)
-        {
-            camera->Position += camera->speed * -camera->Up;
-        }
-        if (strcmp(e->code, "ControlLeft") == 0)
-        {
-            camera->Position += camera->speed * camera->Up;
-            ;
-        }
-        if (strcmp(e->code, "ShiftLeft") == 0)
-        {
-            camera->speed = 0.4f;
-        }
-    }
-    else if (eventType == EMSCRIPTEN_EVENT_KEYUP)
-    {
-        printf("Key up: %s\n", e->key);
-        if (strcmp(e->code, "ShiftLeft") == 0)
-        {
-            camera->speed = 0.1f;
-        }
-    }
-
-    if (strlen(e->key) > 1)
-    {
-        printf("Special or non-ASCII key detected\n");
-    }
-
-    // You can also check properties like e->locale to get the user's language
-    printf("User locale: %s\n", e->locale);
-
-    // Return true to prevent the default browser action
-    return EM_TRUE;
-}
-
-EM_BOOL mouse_click_callback(int eventType, const EmscriptenMouseEvent *e, void *userData)
-{
-    if (eventType == EMSCRIPTEN_EVENT_MOUSEDOWN)
-    {
-        printf("Mouse clicked at coordinates: (%d, %d)\n", e->clientX, e->clientY);
-
-        // Check which button was pressed
-        if (e->button == 0)
-        { // Left mouse button
-            printf("Left button clicked\n");
-
-            float rotX = camera->sensitivity * (float)(e->clientY - (height / 2)) / height;
-            float rotY = camera->sensitivity * (float)(e->clientX - (width / 2)) / width;
-
-            glm::vec3 right = glm::normalize(glm::cross(camera->Orientation, camera->Up));
-            glm::vec3 newOrientation = glm::rotate(camera->Orientation, glm::radians(-rotX), right);
-
-            if (!(glm::angle(newOrientation, camera->Up) <= glm::radians(5.0f)) &&
-                !(glm::angle(newOrientation, -camera->Up) <= glm::radians(5.0f)))
-            {
-                camera->Orientation = newOrientation;
-            }
-
-            camera->Orientation = glm::rotate(camera->Orientation, glm::radians(-rotY), camera->Up);
-
-            // Set cursor position to center of the screen
-            // emscripten_set_mousemove_callback(EMSCRIPTEN_EVENT_TARGET_DOCUMENT, 0, 1, [](int, const EmscriptenMouseEvent* e, void*){
-            //     emscripten_request_pointerlock("#canvas", 1);
-            //     return EM_TRUE;
-            // });
-        }
-        else if (e->button == 1)
-        {
-            printf("Middle button clicked\n");
-        }
-        else if (e->button == 2)
-        {
-            printf("Right button clicked\n");
-        }
-
-        // Check modifier keys
-        if (e->ctrlKey)
-            printf("Ctrl key was pressed during click\n");
-        if (e->shiftKey)
-            printf("Shift key was pressed during click\n");
-        if (e->altKey)
-            printf("Alt key was pressed during click\n");
-    }
-
-    return EM_TRUE; // Return true to prevent default browser action
-}
+double lastTime = 0;
+double currentTime = 0;
+double frameTime = 0;
 
 void MainLoop()
 {
+    currentTime = emscripten_get_now();
+    frameTime = currentTime - lastTime;
+    lastTime = currentTime;
+
+    frameTime /= 1000;
     glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
     // Clean the back buffer and assign the new color to it
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // Tell OpenGL which Shader Program we want to use
     shaderProgram->Activate();
 
-    camera->Matrix(45.0f, 0.1f, 100.0f, shaderProgram, "camMatrix");
+    camera->UpdateMatrix(45.0f, 0.1f, 100.0f);
+
+    camera->Matrix(shaderProgram->ID, "camMatrix");
 
     popCat->Bind();
     // Bind the VAO so OpenGL knows to use it
     VAO1->Bind();
-    // Draw primitives, number of indices, datatype of indices, index of indices
     glDrawElements(GL_TRIANGLES, indicesSize / sizeof(int), GL_UNSIGNED_INT, 0);
 
     // this might not work
@@ -187,14 +87,43 @@ int main()
         };
 
     // Indices for vertices order
-    GLuint indices[] =
-        {
+    GLuint indices[] ={
             0, 1, 2,
             0, 2, 3,
             0, 1, 4,
             1, 2, 4,
             2, 3, 4,
-            3, 0, 4};
+            3, 0, 4
+    };
+
+    GLfloat lightVertices[] = {
+        -0.1f, -0.1f,  0.1f,
+        -0.1f, -0.1f, -0.1f,
+        0.1f, -0.1f, -0.1f,
+        0.1f, -0.1f,  0.1f,
+        -0.1f,  0.1f,  0.1f,
+        -0.1f,  0.1f, -0.1f,
+        0.1f,  0.1f, -0.1f,
+        0.1f,  0.1f,  0.1f
+    };
+
+    GLuint lightIndices[] = {
+        0, 1, 2,
+        0, 2, 3,
+        0, 4, 7,
+        0, 7, 3,
+        3, 7, 6,
+        3, 6, 2,
+        2, 6, 5,
+        2, 5, 1,
+        1, 5, 4,
+        1, 4, 0,
+        4, 5, 6,
+        4, 6, 7
+    };
+
+
+
 
     indicesSize = sizeof(indices);
 
@@ -224,8 +153,13 @@ int main()
 
     camera = new Camera((int)width, (int)height, glm::vec3(0.0f, 0.0f, 2.0f));
 
-    emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, key_callback);
-    emscripten_set_mousedown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, NULL, 1, mouse_click_callback);
+    display = eglGetCurrentDisplay();
+    surface = eglGetCurrentSurface(EGL_DRAW);
+
+    emscripten_set_click_callback("#canvas", (void*)camera, EM_TRUE, immerse);
+    //lilrec only lives in the main function, however it gets added as the second shape.
+    emscripten_set_mousemove_callback("#canvas", (void*)camera, EM_TRUE, mouse_move);
+    emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, (void*)camera, EM_TRUE, key_callback);
     emscripten_set_main_loop(MainLoop, 0, 1);
 
     VAO1->Delete();

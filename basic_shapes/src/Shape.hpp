@@ -18,7 +18,7 @@ typedef enum ShapeType {
 
 class Shape {
 public:
-    ShapeType shape_type;
+    ShapeType shape_type = ShapeType::TRIANGLE;
     GLuint VAO;
     GLuint VBO;
     std::optional<GLuint> EBO;
@@ -108,47 +108,108 @@ public:
         glUniform2f(offsetLocation, windowWidth, windowHeight);
     }
 
+    //a cube should have uniforms supplied to it
+    static Shape InitCube(float width){
+        Shape shape;
+        shape.shape_type = ShapeType::CUBE;
 
-    static Shape InitMesh(int MeshCount) {
-    Shape shape;
-    shape.shape_type = ShapeType::MESH;
+        float a = width/2.0f;
 
-    std::vector<float> line_coords;
+        float vertices[] = {
+            a, 0.0f, a,
+            -a, 0.0f, a,
+            -a, 0.0f, -a,
+            a, 0.0f, -a,
 
-    // For each square cell in the grid
-    for (int x = -MeshCount; x < MeshCount; ++x) {
-        for (int z = -MeshCount; z < MeshCount; ++z) {
-            // Bottom-left
-            line_coords.push_back((float)x);
-            line_coords.push_back((float)z);
-            // Bottom-right
-            line_coords.push_back((float)(x + 1));
-            line_coords.push_back((float)z);
-            // Top-right
-            line_coords.push_back((float)(x + 1));
-            line_coords.push_back((float)(z + 1));
-            // Top-left
-            line_coords.push_back((float)x);
-            line_coords.push_back((float)(z + 1));
-        }
+            a, a*2.0f, a,
+            -a, a*2.0f, a,
+            -a, a*2.0f, -a,
+            a, a*2.0f, -a,
+        };
+
+        GLuint indices[] = {
+            0, 1, 2,
+            0, 2, 3, //bottom face
+            0, 1, 5, 
+            0, 5, 4, //"close side"
+            1, 2, 6,
+            1, 5, 6, //"left side"
+            2, 6, 7,
+            2, 3, 7, //"far side"
+            0, 3, 4,
+            3, 4, 7, //"right side"
+            4, 5, 6,
+            4, 6, 7 //upper face
+        };
+
+        glGenVertexArrays(1, &shape.VAO);
+        glBindVertexArray(shape.VAO);
+
+        glGenBuffers(1, &shape.VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, shape.VBO);
+
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //GL_STATIC_DRAW means it won't be changed
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
+        glEnableVertexAttribArray(0);
+        // std::cout << "vertex lens: " << sizeof(rec_indices)/sizeof(GLuint) << std::endl;
+        // this->VertexLens.push_back(sizeof(rec_indices)/sizeof(GLuint));
+        shape.vertex_len = sizeof(vertices)/3;
+
+
+        GLuint NewEBO;
+        glGenBuffers(1, &NewEBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, NewEBO);
+
+        shape.EBO = NewEBO;
+
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+        shape.x_y_coords = std::nullopt;
+
+        return shape;
     }
 
-    glGenVertexArrays(1, &shape.VAO);
-    glBindVertexArray(shape.VAO);
 
-    glGenBuffers(1, &shape.VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, shape.VBO);
-    glBufferData(GL_ARRAY_BUFFER, line_coords.size() * sizeof(float), line_coords.data(), GL_STATIC_DRAW);
+    static Shape InitMesh(int MeshCount) {
+        Shape shape;
+        shape.shape_type = ShapeType::MESH;
 
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
+        std::vector<float> line_coords;
 
-    shape.vertex_len = line_coords.size() / 2;
+        // For each square cell in the grid
+        for (int x = -MeshCount; x < MeshCount; ++x) {
+            for (int z = -MeshCount; z < MeshCount; ++z) {
+                // Bottom-left
+                line_coords.push_back((float)x);
+                line_coords.push_back((float)z);
+                // Bottom-right
+                line_coords.push_back((float)(x + 1));
+                line_coords.push_back((float)z);
+                // Top-right
+                line_coords.push_back((float)(x + 1));
+                line_coords.push_back((float)(z + 1));
+                // Top-left
+                line_coords.push_back((float)x);
+                line_coords.push_back((float)(z + 1));
+            }
+        }
 
-    shape.x_y_coords = std::nullopt;
+        glGenVertexArrays(1, &shape.VAO);
+        glBindVertexArray(shape.VAO);
 
-    return shape;
-}
+        glGenBuffers(1, &shape.VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, shape.VBO);
+        glBufferData(GL_ARRAY_BUFFER, line_coords.size() * sizeof(float), line_coords.data(), GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+
+        shape.vertex_len = line_coords.size() / 2;
+
+        shape.x_y_coords = std::nullopt;
+
+        return shape;
+    }
 
 
 

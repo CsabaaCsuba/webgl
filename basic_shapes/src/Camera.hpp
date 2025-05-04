@@ -13,6 +13,7 @@ public:
     glm::vec3 Position;
     glm::vec3 Orientation = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::mat4 ViewMatrix = glm::mat4x4(1.0f);
 
     int width;
     int height;
@@ -30,15 +31,18 @@ public:
         this->Position = position;
     }
 
-    void Matrix(float FOVdeg, float nearPlane, float farPlane, GLuint shaderID, const char* uniform){
+    void Matrix(float FOVdeg, float nearPlane, float farPlane){
         glm::mat4 view = glm::mat4(1.0f);
         glm::mat4 projection = glm::mat4(1.0f);
 
         view = glm::lookAt(Position, Position + Orientation, Up);
         projection = glm::perspective(glm::radians(FOVdeg), (float)(width) / (float)(height), nearPlane, farPlane);
+        ViewMatrix = projection * view;
+        
+    }
 
-        glUniformMatrix4fv(glGetUniformLocation(shaderID, uniform), 1, GL_FALSE, glm::value_ptr(projection * view));
-
+    void UpdateMatrix(GLuint shaderID, const char* uniform){
+        glUniformMatrix4fv(glGetUniformLocation(shaderID, uniform), 1, GL_FALSE, glm::value_ptr(ViewMatrix));
     }
 
 };
