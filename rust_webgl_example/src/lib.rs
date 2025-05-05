@@ -90,8 +90,8 @@ fn start_render_loop(ref_gl: Rc<RefCell<WebGl2RenderingContext>>, manager: Manag
         gl.uniform4fv_with_f32_array(color_uniform.as_ref(), &manager.shapes[0].color.to_array());
 
 
-        let camera_info = manager.camera.debug_info();
-        web_sys::console::log_1(&camera_info.into());
+        // let camera_info = manager.camera.debug_info();
+        // web_sys::console::log_1(&camera_info.into());
         
         gl.draw_elements_with_i32(
             WebGl2RenderingContext::TRIANGLES,
