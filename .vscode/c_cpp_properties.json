@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/include/**"
+                "/usr/include/**",
+                "/usr/bin/emcc/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/emcc",
