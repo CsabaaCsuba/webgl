@@ -7,6 +7,7 @@ edition = "2024"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+glam="0.30.3"
 wasm-bindgen = "0.2.86"
 js-sys = "0.3"
 wasm-bindgen-futures = "0.4.50"
@@ -17,7 +18,8 @@ features = [
   "Window", 
   "HtmlCanvasElement",
   "WebGlRenderingContext", 
-  "WebGl2RenderingContext", 
+  "WebGl2RenderingContext",
+  "WebGlVertexArrayObject",
   "WebGlProgram", 
   "WebGlShader", 
   "WebGlBuffer", 
