@@ -1,0 +1,11 @@
+#version 300 es
+layout (location = 0) in vec4 vertex; // <vec2 pos, vec2 tex>
+
+out vec2 TexCoords;
+
+// uniform mat4 projection;
+
+void main() {
+    gl_Position = vec4(vertex.xy, 0.0, 1.0); //could be multiplied by projection, but this is not 3d yet
+    TexCoords = vertex.zw;
+}

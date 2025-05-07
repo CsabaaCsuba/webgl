@@ -169,6 +169,15 @@ public:
         return shape;
     }
 
+    static Shape InitSphere(float dim_x, float dim_y, float dim_z, float r){
+        
+    }
+
+    static Shape Init2dText(float x, float y, char* text, char* font){
+
+    }
+
+
 
     static Shape InitMesh(int MeshCount) {
         Shape shape;
