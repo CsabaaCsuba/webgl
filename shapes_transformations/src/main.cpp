@@ -43,9 +43,9 @@ void update_camera(Camera* camera) {
         camera->Position -= camera->speed * glm::normalize(glm::cross(camera->Orientation, camera->Up));
     if (keyStates["KeyD"])
         camera->Position += camera->speed * glm::normalize(glm::cross(camera->Orientation, camera->Up));
-    if (keyStates["Space"])
-        camera->Position += camera->speed * -camera->Up;
     if (keyStates["ControlLeft"])
+        camera->Position += camera->speed * -camera->Up;
+    if (keyStates["Space"])
         camera->Position += camera->speed * camera->Up;
 }
 
