@@ -1,10 +1,13 @@
 #pragma once
 #include <emscripten/html5.h>
 #include <iostream>
+#include <unordered_map>
+#include <string>
 
 
 float WindowWidth, WindowHeight;
 float mouseX, mouseY;
+std::unordered_map<std::string, bool> keyStates;
 
 EM_BOOL immerse(int eventType, const EmscriptenMouseEvent *e, void *userData) {
     Camera* camera = (Camera*)userData;
@@ -70,50 +73,21 @@ EM_BOOL mouse_move(int eventType, const EmscriptenMouseEvent *e, void *userData)
 
 EM_BOOL key_callback(int eventType, const EmscriptenKeyboardEvent *e, void *userData){
     Camera* camera = (Camera*)userData;
-    
 
-    if (eventType == EMSCRIPTEN_EVENT_KEYDOWN)
-    {
-        printf("Key down: %s, code: %s\n", e->key, e->code);
+    std::string codeStr(e->code);
 
-        // Check for specific keys
-        if (strcmp(e->code, "KeyW") == 0)
-        {
-            camera->Position += camera->speed * camera->Orientation;
-        }
-        if (strcmp(e->code, "KeyA") == 0)
-        {
-            camera->Position += camera->speed * -glm::normalize(glm::cross(camera->Orientation, camera->Up));
-        }
-        if (strcmp(e->code, "KeyS") == 0)
-        {
-            camera->Position += camera->speed * -camera->Orientation;
-        }
-        if (strcmp(e->code, "KeyD") == 0)
-        {
-            camera->Position += camera->speed * glm::normalize(glm::cross(camera->Orientation, camera->Up));
-        }
-        if (strcmp(e->code, "Space") == 0)
-        {
-            camera->Position += camera->speed * -camera->Up;
-        }
-        if (strcmp(e->code, "ControlLeft") == 0)
-        {
-            camera->Position += camera->speed * camera->Up;
-        }
-        if (strcmp(e->code, "ShiftLeft") == 0)
-        {
+    if (eventType == EMSCRIPTEN_EVENT_KEYDOWN) {
+        keyStates[codeStr] = true;
+        if (codeStr == "ShiftLeft") {
             camera->speed = 0.4f;
         }
-    }
-    else if (eventType == EMSCRIPTEN_EVENT_KEYUP)
-    {
-        printf("Key up: %s\n", e->key);
-        if (strcmp(e->code, "ShiftLeft") == 0)
-        {
+    } else if (eventType == EMSCRIPTEN_EVENT_KEYUP) {
+        keyStates[codeStr] = false;
+        if (codeStr == "ShiftLeft") {
             camera->speed = 0.1f;
         }
     }
+    
 
     if (strlen(e->key) > 1)
     {

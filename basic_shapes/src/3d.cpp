@@ -23,6 +23,7 @@
 #include "CanvasManagement.hpp"
 #include "../include/emscripten_fetch.hpp"
 #include "Program.hpp"
+#include <optional>
 
 
 Program *program;
@@ -33,17 +34,35 @@ double lastTime = 0;
 double currentTime = 0;
 double frameTime = 0;
 
+void update_camera(Camera* camera) {
+    if (keyStates["KeyW"])
+        camera->Position += camera->speed * camera->Orientation;
+    if (keyStates["KeyS"])
+        camera->Position -= camera->speed * camera->Orientation;
+    if (keyStates["KeyA"])
+        camera->Position -= camera->speed * glm::normalize(glm::cross(camera->Orientation, camera->Up));
+    if (keyStates["KeyD"])
+        camera->Position += camera->speed * glm::normalize(glm::cross(camera->Orientation, camera->Up));
+    if (keyStates["Space"])
+        camera->Position += camera->speed * -camera->Up;
+    if (keyStates["ControlLeft"])
+        camera->Position += camera->speed * camera->Up;
+}
+
+
 void MainLoop(){
     currentTime = emscripten_get_now();
     frameTime = currentTime - lastTime;
     lastTime = currentTime;
 
-    frameTime /= 1000;
+    // frameTime /= 1000;
 
-    std::cout << "current frametime: " << frameTime << "s" << std::endl;
+    std::cout << "current frametime: " << frameTime << "ms" << std::endl;
 
     glClearColor(0.2, 0.2, 0.2, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    update_camera(&program->cam);
 
     program->cam.Matrix(90.0f, 0.02, 100.0f);
 
@@ -128,6 +147,8 @@ int main(){
     //lilrec only lives in the main function, however it gets added as the second shape.
     emscripten_set_mousemove_callback("#canvas", (void*)&(program->cam), EM_TRUE, mouse_move);
     emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, (void*)&(program->cam), EM_TRUE, key_callback);
+    emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, (void*)&(program->cam), EM_TRUE, key_callback);
+
     emscripten_set_main_loop(MainLoop, 0, 1);
 
     return 0;

@@ -2,13 +2,19 @@
 precision mediump float;
 
 in vec2 TexCoords;
-out vec4 color;
+out vec4 FragColor;
 
 uniform sampler2D text;
-uniform vec3 textColor;
+uniform vec4 textColor;
 
 void main() {
-    //alpha decides if a pixel should be visible or not
+    // Sample the texture to get the glyph coverage
     float alpha = texture(text, TexCoords).r;
-    color = vec4(textColor, alpha);
+    
+    // Discard fragments with very low alpha (optimization)
+    if (alpha < 0.01)
+        discard;
+    
+    // Final color is text color with the alpha from the font texture
+    FragColor = vec4(textColor.rgb, textColor.a * alpha);
 }
