@@ -159,8 +159,8 @@ FontAtlas CreateFont(std::string font_name, float font_size, int first_char, int
     
     atlas.first_char = first_char;
     atlas.num_chars = num_chars;
-    atlas.texture_width = 512;
-    atlas.texture_height = 512;
+    atlas.texture_width = 1024;
+    atlas.texture_height = 1024;
     
     uint8_t* temp_bitmap = new uint8_t[atlas.texture_width * atlas.texture_height];
     memset(temp_bitmap, 0, atlas.texture_width * atlas.texture_height);
