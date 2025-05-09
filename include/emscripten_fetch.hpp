@@ -4,6 +4,22 @@
 #include <emscripten/html5.h>
 #include <emscripten/fetch.h>
 #include <vector>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
+
+// Image structure
+struct Image {
+    unsigned char* data = nullptr;
+    int width = 0;
+    int height = 0;
+    int channels = 0;
+
+    ~Image() {
+        if (data) {
+            stbi_image_free(data);
+        }
+    }
+};
 
 
 // Structure to pass data between fetch callbacks
@@ -187,4 +203,37 @@ void downloadBinaryContentAsync(const std::string& url,
     
     // Start the fetch
     emscripten_fetch(&attr, url.c_str());
+}
+
+
+
+// Improved image loading function for better JPEG handling
+Image LoadImageFromURL(const std::string& url) {
+    std::vector<uint8_t> imageData = downloadBinaryContent(url);
+    Image img;
+    
+    if (!imageData.empty()) {
+        // Force 4 channels (RGBA) for consistent texture format
+        img.data = stbi_load_from_memory(
+            imageData.data(), 
+            imageData.size(), 
+            &img.width, 
+            &img.height, 
+            &img.channels, 
+            4  // Force RGBA format (4 channels)
+        );
+        
+        if (img.data) {
+            // Always set channels to 4 since we forced RGBA
+            img.channels = 4;
+            printf("Successfully loaded image: %dx%d with %d channels\n", 
+                  img.width, img.height, img.channels);
+        } else {
+            printf("Failed to decode image: %s\n", stbi_failure_reason());
+        }
+    } else {
+        printf("Failed to fetch image data from URL: %s\n", url.c_str());
+    }
+
+    return img;
 }

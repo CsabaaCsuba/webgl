@@ -105,13 +105,11 @@ void MainLoop(){
     
     program->DrawShape(program->shapes[0]);
 
-
-    //this might not work
     eglSwapBuffers(display, surface);
 }
 
 int main(){
-    std::cout << "halo" << std::endl;
+    std::cout << "Starting application..." << std::endl;
     EmscriptenWebGLContextAttributes attrs;
     emscripten_webgl_init_context_attributes(&attrs);
     attrs.majorVersion = 2; // WebGL 2.0 corresponds to OpenGL ES 3.0
@@ -127,26 +125,24 @@ int main(){
 
     program = new Program(canvasWidth, canvasHeight, glm::vec3(0.0f, 1.1f, 3.0f));
 
-
-    Shape myCube = Shape::InitCube(1.5f);
+    // Create textured cube with explicit path
+    const std::string texturePath = "textures/cobblestone.jpeg";
+    std::cout << "Creating cube with texture: " << texturePath << std::endl;
+    Shape myCube = Shape::InitCube(1.5f, texturePath);
+    
     GLuint cubeShader = program->CreateShaderProgram("./shaders/3d.vert", "./shaders/3d.frag");
+    std::cout << "Shader program created: " << cubeShader << std::endl;
 
     myCube.AssignShaderProgram(cubeShader);
 
     program->AddShape(myCube);
 
-
-
     glEnable(GL_DEPTH_TEST);
 
-    //todo: add a spinning cube
-
-    //this must be defined for buffer swapping (VSYNC)
     display = eglGetCurrentDisplay();
     surface = eglGetCurrentSurface(EGL_DRAW);
 
     emscripten_set_click_callback("#canvas", (void*)&(program->cam), EM_TRUE, immerse);
-    //lilrec only lives in the main function, however it gets added as the second shape.
     emscripten_set_mousemove_callback("#canvas", (void*)&(program->cam), EM_TRUE, mouse_move);
     emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, (void*)&(program->cam), EM_TRUE, key_callback);
     emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, (void*)&(program->cam), EM_TRUE, key_callback);

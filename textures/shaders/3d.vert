@@ -1,9 +1,12 @@
 #version 300 es
 layout(location=0) in vec3 basePos;
+layout(location=1) in vec2 inputTexCoord;
 uniform vec3 translation;
 uniform vec3 rotation;
 uniform vec3 scaling;
 uniform mat4 cam_matrix;
+
+out vec2 TexCoord;
 
 mat4 rotationMatrix(vec3 rotation_angles) {
     vec3 eulerAngles = radians(rotation_angles);
@@ -63,5 +66,5 @@ void main() {
     
     // Apply transformations
     gl_Position = cam_matrix * model_matrix * vec4(basePos, 1.0);
-    
+    TexCoord = inputTexCoord;
 }

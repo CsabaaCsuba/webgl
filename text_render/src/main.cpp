@@ -276,28 +276,51 @@ GLuint CreateShaderProgram(const char *vertex_source, const char *fragment_sourc
     return shaderProgram_id;
 }
 
-// Main rendering loop
+double lastTime = 0.0;
+uint16_t frameCount = 0;
+float currentFPS = 0.0f;
+
 void main_loop(void* arg) {
     Params* params = (Params*)arg;
-    
+
+    // Time tracking
+    double currentTime = emscripten_get_now(); // Returns time in milliseconds
+    frameCount++;
+
+    if (currentTime - lastTime >= 1000.0) { // One second passed
+        currentFPS = frameCount * 1000.0f / (currentTime - lastTime);
+        frameCount = 0;
+        lastTime = currentTime;
+    }
+
     // Clear the screen
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    
+
     // Text properties
-    float textColor[4] = {1.0f, 0.6f, 1.0f, 1.0f}; // White text
+    float textColor[4] = {1.0f, 0.6f, 1.0f, 1.0f}; // Pink-ish
     const char* text = "Hello World";
-    
-    // Center the text
+
+    // Centered text
     float textWidth = strlen(text) * 16.0f; // Approximate width
     float textX = (params->window_width - textWidth) / 2.0f;
     float textY = params->window_height / 2.0f - 12.0f;
-    
-    // Render the text
+
+    // Render main text
     render_text(&params->font, params->shader, params->VAO, params->VBO,
                 params->uniform_projection, params->uniform_text_color, params->uniform_text_sampler,
                 params->projection, textX, textY, text, textColor);
+
+    // Render FPS in top-left corner
+    char fpsText[32];
+    snprintf(fpsText, sizeof(fpsText), "FPS: %.1f", currentFPS);
+
+    float fpsColor[4] = {1.0f, 1.0f, 0.0f, 1.0f}; // Yellow
+    render_text(&params->font, params->shader, params->VAO, params->VBO,
+                params->uniform_projection, params->uniform_text_color, params->uniform_text_sampler,
+                params->projection, 10.0f, 10.0f + 16.0f, fpsText, fpsColor);
 }
+
 
 // Clean up resources
 void cleanup(Params* params) {

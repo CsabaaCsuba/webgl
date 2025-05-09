@@ -23,7 +23,14 @@
 #include "Camera.hpp"
 #include "CanvasManagement.hpp"
 #include "../include/emscripten_fetch.hpp"
-#include "Program.hpp"
+
+// Debug utility function to check for OpenGL errors
+void checkGLError(const char* operation) {
+    GLenum error;
+    while ((error = glGetError()) != GL_NO_ERROR) {
+        std::cout << "OpenGL error after " << operation << ": 0x" << std::hex << error << std::dec << std::endl;
+    }
+}
 
 class Program{
 public:
@@ -43,31 +50,67 @@ public:
         shapes.push_back(shape);
     }
 
-
     void DrawShape(Shape shape){
-        GLuint current_vao = shape.VAO;
-        glUseProgram(shape.shaderprogram_id.value());
-        glBindVertexArray(current_vao);
-
-        if (shape.shape_type == ShapeType::MESH){
-            for (int i = 0; i < shape.vertex_len; i += 4) {
-                glDrawArrays(GL_LINE_LOOP, i, 4);
-            }
-            
+        if (!shape.shaderprogram_id.has_value()) {
+            std::cout << "Error: No shader program assigned to shape!" << std::endl;
+            return;
         }
-        else {
-            glDrawElements(GL_TRIANGLES, shape.vertex_len, GL_UNSIGNED_INT, 0);
+    
+        // Use the shader program
+        glUseProgram(shape.shaderprogram_id.value());
+        checkGLError("glUseProgram");
+    
+        // Bind the VAO
+        glBindVertexArray(shape.VAO);
+        checkGLError("glBindVertexArray");
+    
+        // Handle texture if available
+        if (shape.texture_id.has_value()) {
+            
+            glActiveTexture(GL_TEXTURE0);
+            checkGLError("glActiveTexture");
+            
+            glBindTexture(GL_TEXTURE_2D, shape.texture_id.value());
+            checkGLError("glBindTexture");
+            
+        } else {
+            std::cout << "Warning: No texture assigned to this shape!" << std::endl;
         }
         
+        // Draw the shape based on its type
+        if (shape.shape_type == ShapeType::MESH) {
+            for (int i = 0; i < shape.vertex_len; i += 4) {
+                glDrawArrays(GL_LINE_LOOP, i, 4);
+                checkGLError("glDrawArrays");
+            }
+        }
+        else {
+            // Check if indices are properly set up
+            if (shape.EBO.has_value()) {
+                glDrawElements(GL_TRIANGLES, shape.vertex_len, GL_UNSIGNED_INT, 0);
+                checkGLError("glDrawElements");
+            } else {
+                std::cout << "Warning: No EBO assigned to this shape!" << std::endl;
+            }
+        }
+        
+        // Unbind VAO and texture to prevent unintended modifications
         glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     static GLuint CompileShader(GLenum type, const char *source_file){
         std::string fileContents = downloadContent(source_file);
-        std::cout << "string contents: " << fileContents << std::endl;
+        std::cout << "Compiling shader from: " << source_file << std::endl;
+        
+        if (fileContents.empty()) {
+            std::cout << "Error: Could not load shader file: " << source_file << std::endl;
+            return 0;
+        }
+        
         GLuint shader = glCreateShader(type);
-        const GLchar* whatever = fileContents.data();
-        glShaderSource(shader, 1, &whatever, NULL);
+        const GLchar* shaderSource = fileContents.data();
+        glShaderSource(shader, 1, &shaderSource, NULL);
         glCompileShader(shader);
 
         GLint status;
@@ -83,20 +126,23 @@ public:
             }
             return 0;
         }
-
+        
+        std::cout << "Shader compiled successfully!" << std::endl;
         return shader;
     }
 
     static GLuint CreateShaderProgram(const char *vertex_source, const char *fragment_source){
         GLuint vertexShader_id = Program::CompileShader(GL_VERTEX_SHADER, vertex_source);
         if (vertexShader_id == 0){
-            std::cout << "vertex shader compilation failed..." << std::endl;
+            std::cout << "Vertex shader compilation failed..." << std::endl;
+            return 0;
         }
     
         GLuint fragmentShader_id = Program::CompileShader(GL_FRAGMENT_SHADER, fragment_source);
         if (fragmentShader_id == 0) {
             glDeleteShader(vertexShader_id);
-            std::cout << "fragment shader compilation failed..." << std::endl;
+            std::cout << "Fragment shader compilation failed..." << std::endl;
+            return 0;
         }
     
         GLuint shaderProgram_id = glCreateProgram();
@@ -120,11 +166,13 @@ public:
             glDeleteShader(vertexShader_id);
             glDeleteShader(fragmentShader_id);
             glDeleteProgram(shaderProgram_id);
+            return 0;
         }
     
         glDeleteShader(vertexShader_id);
         glDeleteShader(fragmentShader_id);
-
+        
+        std::cout << "Shader program created successfully: " << shaderProgram_id << std::endl;
         return shaderProgram_id;
     }
 
@@ -139,6 +187,6 @@ public:
             return;
         }
         glUseProgram(shapes[idx].shaderprogram_id.value());
+        checkGLError("UseShader.glUseProgram");
     }
-        
 };
