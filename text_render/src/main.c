@@ -61,7 +61,7 @@ GLuint InitFont(char* FontName, stbtt_bakedchar* CharData, size_t CharDataLen){
     GLuint Texture;
     glGenTextures(1, &Texture);
     glBindTexture(GL_TEXTURE_2D, Texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 512, 512, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, TempBitmap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 512, 512, 0, GL_RED, GL_UNSIGNED_BYTE, TempBitmap);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -213,6 +213,7 @@ int main(){
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
     size_t CharDataLen = 96;
     stbtt_bakedchar* CharData = (stbtt_bakedchar*)malloc(sizeof(stbtt_bakedchar)*CharDataLen);
