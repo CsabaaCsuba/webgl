@@ -1,20 +1,15 @@
 #version 300 es
-precision mediump float;
+precision highp float;  // Use highp for better precision
 
-in vec2 TexCoords;
+in vec2 TexCoord;
 out vec4 FragColor;
 
-uniform sampler2D text;
-uniform vec4 textColor;
+uniform sampler2D textTexture;
 
 void main() {
-    // Sample the texture to get the glyph coverage
-    float alpha = texture(text, TexCoords).r;
+    // Sample the texture at the interpolated texture coordinate
+    float alpha = texture(textTexture, TexCoord).r;
     
-    // Discard fragments with very low alpha (optimization)
-    if (alpha < 0.01)
-        discard;
-    
-    // Final color is text color with the alpha from the font texture
-    FragColor = vec4(textColor.rgb, textColor.a * alpha);
+    // Normal output
+    FragColor = vec4(1.0, 1.0, 1.0, alpha);
 }

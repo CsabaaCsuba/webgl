@@ -1,18 +1,19 @@
 #version 300 es
-layout (location = 0) in vec2 vertex;
-layout (location = 1) in vec2 texture_coordinate;
+layout(location=0) in vec2 texCoord;
+layout(location=1) in vec2 position;
 
-out vec2 TexCoords;
+out vec2 TexCoord;
 
-// Simplified projection: [scale_x, scale_y, offset_x, offset_y]
-uniform vec4 projection;
+// uniform vec2 screenSize;
 
 void main() {
-    // Apply the simplified 2D transformation
-    vec2 transformed = vec2(
-        vertex.x * projection.x + projection.z,
-        vertex.y * projection.y + projection.w
-    );
-    gl_Position = vec4(transformed, 0.0, 1.0);
-    TexCoords = texture_coordinate;
+    // Convert from screen coordinates to normalized device coordinates
+    vec2 normalizedPos = (position / vec2(800, 600)) * 2.0 - 1.0;
+    // Flip y-coordinate for proper text orientation (OpenGL has Y growing upwards)
+    normalizedPos.y = -normalizedPos.y;
+    
+    // Make sure all components of gl_Position are properly set
+    gl_Position = vec4(normalizedPos, 0.0, 1.0); // z=0.0, w=1.0 is critical
+    
+    TexCoord = texCoord;
 }
