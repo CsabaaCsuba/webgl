@@ -61,7 +61,7 @@ void main() {
     // Get rotation matrix
     mat4 rotation_matrix = rotationMatrix(rotation);
     
-    // Create model matrix (scale → rotate → translate)
+    // Create model matrix (scale -> rotate -> translate)
     mat4 model_matrix = translation_matrix * rotation_matrix * scale_matrix;
     
     // Apply transformations
