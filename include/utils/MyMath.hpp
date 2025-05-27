@@ -159,14 +159,14 @@ struct Mat4 {
     }
 
 
-    Mat4 operator*(Mat4 other){
+    Mat4 operator*(Mat4 other) {
         float result[16];
         
-        for(int row = 0; row < 4; row++) {
-            for(int col = 0; col < 4; col++) {
-                result[row * 4 + col] = 0;
+        for(int col = 0; col < 4; col++) {
+            for(int row = 0; row < 4; row++) {
+                result[col * 4 + row] = 0;
                 for(int k = 0; k < 4; k++) {
-                    result[row * 4 + col] += data[row * 4 + k] * other.data[k * 4 + col];
+                    result[col * 4 + row] += data[k * 4 + row] * other.data[col * 4 + k];
                 }
             }
         }
@@ -175,31 +175,28 @@ struct Mat4 {
     }
 
     
-
-
-    static Mat4 create_perspective(float FOVRad, float AspectRatio, float near, float far){
+    static Mat4 create_perspective(float FOVRad, float AspectRatio, float near, float far) {
         float f = 1 / tanf(FOVRad/2);
         float n = 1 / (near - far);
         float data[16] = {
             f/AspectRatio, 0.0f, 0.0f, 0.0f,
             0.0f, f, 0.0f, 0.0f,
-            0.0f, 0.0f, (far+near)*n, (2*far*near)*n,
-            0.0f, 0.0f, -1.0f, 0.0f
+            0.0f, 0.0f, (far+near)*n, -1.0f,
+            0.0f, 0.0f, (2*far*near)*n, 0.0f
         };
         return Mat4(data);
     }
 
-    static Mat4 create_view(Vec3 CameraPos, Vec3 TargetPos, Vec3 UpVector){
-        
+    static Mat4 create_view(Vec3 CameraPos, Vec3 TargetPos, Vec3 UpVector) {
         Vec3 forward = (TargetPos-CameraPos).normalize();
         Vec3 right = Vec3::cross(forward, UpVector).normalize();
         Vec3 actual_up = Vec3::cross(right, forward);
 
         float matrix[] = {
-            right.data[0], right.data[1], right.data[2], -Vec3::dot(right, CameraPos),
-            actual_up.data[0], actual_up.data[1], actual_up.data[2], -Vec3::dot(actual_up, CameraPos),
-            -forward.data[0], -forward.data[1], -forward.data[2], Vec3::dot(forward, CameraPos),
-            0.0f, 0.0f, 0.0f, 1.0f
+            right.data[0], actual_up.data[0], -forward.data[0], 0.0f,
+            right.data[1], actual_up.data[1], -forward.data[1], 0.0f,
+            right.data[2], actual_up.data[2], -forward.data[2], 0.0f,
+            -Vec3::dot(right, CameraPos), -Vec3::dot(actual_up, CameraPos), Vec3::dot(forward, CameraPos), 1.0f
         };
 
         return Mat4(matrix);
@@ -218,5 +215,25 @@ struct Mat4 {
 };
 
 
+struct Quat {
+    float data[4];
 
+    Quat(){
+        data[0] = 1.0f;
+        data[1] = 0.0f;
+        data[2] = 0.0f;
+        data[3] = 0.0f;
+    }
+
+    static Quat from_rotation_vector(float rot_deg, Vec3 rot_vector){
+        Quat quaternion;
+        float rad = PI_180 * rot_deg;
+        quaternion.data[0] = cosf(rad / 2.0f);
+        quaternion.data[1] = rot_vector.data[0] * sinf(rad / 2.0f);
+        quaternion.data[2] = rot_vector.data[1] * sinf(rad / 2.0f);
+        quaternion.data[3] = rot_vector.data[2] * sinf(rad / 2.0f);
+    }
+
+
+};
 

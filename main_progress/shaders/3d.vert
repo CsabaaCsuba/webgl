@@ -4,6 +4,7 @@ layout(location=1) in vec2 inputTexCoord;
 uniform vec3 translation;
 uniform vec3 rotation;
 uniform vec3 scaling;
+uniform mat4 mvp_matrix;
 uniform mat4 cam_matrix;
 
 out vec2 TexCoord;

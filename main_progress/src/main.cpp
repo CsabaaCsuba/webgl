@@ -85,14 +85,14 @@ void MainLoop(){
 
     rotation.y += (float)frameTime*rotation_speed;
 
-    // std::cout << "current frametime: " << frameTime << "ms" << std::endl;
+    // std::cout << "current frametime: " << frameTime*1000 << "ms" << std::endl;
 
     glClearColor(0.2, 0.2, 0.2, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     update_camera(&program->cam);
 
-    program->cam.SetProjection(90.0f, 0.02, 100.0f);
+    program->cam.SetProjection(100.0f, 0.02, 100.0f);
 
     program->UseShader(0);
 
@@ -106,7 +106,7 @@ void MainLoop(){
     
     program->DrawShape(program->shapes[0]);
 
-    eglSwapBuffers(display, surface);
+    // eglSwapBuffers(display, surface);
 }
 
 int main(){
@@ -115,6 +115,10 @@ int main(){
     emscripten_webgl_init_context_attributes(&attrs);
     attrs.majorVersion = 2; // WebGL 2.0 corresponds to OpenGL ES 3.0
     attrs.minorVersion = 0;
+
+    attrs.enableExtensionsByDefault = 1;
+    attrs.powerPreference = EM_WEBGL_POWER_PREFERENCE_HIGH_PERFORMANCE;
+    
 
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context = emscripten_webgl_create_context("#canvas", &attrs);
     emscripten_webgl_make_context_current(context);
@@ -149,6 +153,8 @@ int main(){
     emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, (void*)&(program->cam), EM_TRUE, key_callback);
 
     emscripten_set_main_loop(MainLoop, 0, 1);
+    // emscripten_set_main_loop_timing(EM_TIMING_SETTIMEOUT, 0);
+
 
     return 0;
 }
