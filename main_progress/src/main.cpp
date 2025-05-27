@@ -1,11 +1,11 @@
-#define GLM_ENABLE_EXPERIMENTAL 
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtc/type_ptr.hpp"
-#include "glm/gtx/rotate_vector.hpp"
-#include "glm/gtx/vector_angle.hpp"
-#include "glm/ext/matrix_clip_space.hpp"
-#include "glm/ext/matrix_transform.hpp"
+// #define GLM_ENABLE_EXPERIMENTAL 
+// #include "glm/glm.hpp"
+// #include "glm/gtc/matrix_transform.hpp"
+// #include "glm/gtc/type_ptr.hpp"
+// #include "glm/gtx/rotate_vector.hpp"
+// #include "glm/gtx/vector_angle.hpp"
+// #include "glm/ext/matrix_clip_space.hpp"
+// #include "glm/ext/matrix_transform.hpp"
 #include <GLES3/gl3.h>
 #include <EGL/egl.h>
 #include <emscripten.h>
@@ -24,6 +24,7 @@
 #include "../include/emscripten_fetch.hpp"
 #include "Program.hpp"
 #include <optional>
+#include "utils/MyMath.hpp"
 
 
 Program *program;
@@ -36,17 +37,17 @@ double frameTime = 0;
 
 void update_camera(Camera* camera) {
     if (keyStates["KeyW"])
-        camera->Position += camera->speed * camera->Orientation;
+        camera->Position += (camera->Orientation * camera->speed);
     if (keyStates["KeyS"])
-        camera->Position -= camera->speed * camera->Orientation;
+        camera->Position -= camera->Orientation * camera->speed;
     if (keyStates["KeyA"])
-        camera->Position -= camera->speed * glm::normalize(glm::cross(camera->Orientation, camera->Up));
+        camera->Position -= Vec3::cross(camera->Orientation, camera->Up).normalize() * camera->speed;
     if (keyStates["KeyD"])
-        camera->Position += camera->speed * glm::normalize(glm::cross(camera->Orientation, camera->Up));
+        camera->Position += Vec3::cross(camera->Orientation, camera->Up).normalize() * camera->speed;
     if (keyStates["ControlLeft"])
-        camera->Position += camera->speed * -camera->Up;
+        camera->Position +=  -camera->Up * camera->speed;
     if (keyStates["Space"])
-        camera->Position += camera->speed * camera->Up;
+        camera->Position += camera->Up * camera->speed;
 }
 
 glm::vec3 movement = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -84,7 +85,7 @@ void MainLoop(){
 
     rotation.y += (float)frameTime*rotation_speed;
 
-    std::cout << "current frametime: " << frameTime << "ms" << std::endl;
+    // std::cout << "current frametime: " << frameTime << "ms" << std::endl;
 
     glClearColor(0.2, 0.2, 0.2, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -123,7 +124,7 @@ int main(){
 
     glViewport(0, 0, (GLsizei)canvasWidth, (GLsizei)canvasHeight);
 
-    program = new Program(canvasWidth, canvasHeight, glm::vec3(0.0f, 2.0f, 4.0f));
+    program = new Program(canvasWidth, canvasHeight, Vec3::create(0.0f, 2.0f, 4.0f));
 
     // Create textured cube with explicit path
     const std::string texturePath = "textures/cobblestone.jpeg";
@@ -143,7 +144,7 @@ int main(){
     surface = eglGetCurrentSurface(EGL_DRAW);
 
     emscripten_set_click_callback("#canvas", (void*)&(program->cam), EM_TRUE, immerse);
-    emscripten_set_mousemove_callback("#canvas", (void*)&(program->cam), EM_TRUE, mouse_move);
+    // emscripten_set_mousemove_callback("#canvas", (void*)&(program->cam), EM_TRUE, mouse_move);
     emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, (void*)&(program->cam), EM_TRUE, key_callback);
     emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, (void*)&(program->cam), EM_TRUE, key_callback);
 

@@ -1,12 +1,12 @@
 #pragma once
-#define GLM_ENABLE_EXPERIMENTAL 
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtc/type_ptr.hpp"
-#include "glm/gtx/rotate_vector.hpp"
-#include "glm/gtx/vector_angle.hpp"
-#include "glm/ext/matrix_clip_space.hpp"
-#include "glm/ext/matrix_transform.hpp"
+// #define GLM_ENABLE_EXPERIMENTAL 
+// #include "glm/glm.hpp"
+// #include "glm/gtc/matrix_transform.hpp"
+// #include "glm/gtc/type_ptr.hpp"
+// #include "glm/gtx/rotate_vector.hpp"
+// #include "glm/gtx/vector_angle.hpp"
+// #include "glm/ext/matrix_clip_space.hpp"
+// #include "glm/ext/matrix_transform.hpp"
 #include <GLES3/gl3.h>
 #include <EGL/egl.h>
 #include <emscripten.h>
@@ -23,6 +23,7 @@
 #include "Camera.hpp"
 #include "CanvasManagement.hpp"
 #include "../include/emscripten_fetch.hpp"
+#include "utils/MyMath.hpp"
 
 // Debug utility function to check for OpenGL errors
 void checkGLError(const char* operation) {
@@ -39,10 +40,10 @@ public:
     Camera cam;
     std::vector<Shape> shapes;
 
-    Program(double WindowWidth, double WindowHeight, glm::vec3 CameraPosition){
+    Program(double WindowWidth, double WindowHeight, Vec3 CameraPosition){
         this->WindowWidth = (float)WindowWidth;
         this->WindowHeight = (float)WindowHeight;
-        Camera new_cam((int)WindowWidth, (int) WindowHeight, CameraPosition);
+        Camera new_cam((float)WindowWidth, (float)WindowHeight, CameraPosition);
         this->cam = new_cam;
     }
 
