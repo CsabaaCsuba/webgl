@@ -148,7 +148,7 @@ int main(){
     surface = eglGetCurrentSurface(EGL_DRAW);
 
     emscripten_set_click_callback("#canvas", (void*)&(program->cam), EM_TRUE, immerse);
-    // emscripten_set_mousemove_callback("#canvas", (void*)&(program->cam), EM_TRUE, mouse_move);
+    emscripten_set_mousemove_callback("#canvas", (void*)&(program->cam), EM_TRUE, mouse_move);
     emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, (void*)&(program->cam), EM_TRUE, key_callback);
     emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, (void*)&(program->cam), EM_TRUE, key_callback);
 

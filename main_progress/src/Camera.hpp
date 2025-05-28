@@ -11,7 +11,7 @@
 
 #include "utils/MyMath.hpp"
 
-constexpr float PI_180 = (float)M_PI / 180.0f;
+
 
 class Camera {
 public:
