@@ -4,15 +4,16 @@
 #include <array>
 #include <optional>
 #include <GLES3/gl3.h>
-#define GLM_ENABLE_EXPERIMENTAL 
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtc/type_ptr.hpp"
-#include "glm/gtx/rotate_vector.hpp"
-#include "glm/gtx/vector_angle.hpp"
-#include "glm/ext/matrix_clip_space.hpp"
-#include "glm/ext/matrix_transform.hpp"
+// #define GLM_ENABLE_EXPERIMENTAL 
+// #include "glm/glm.hpp"
+// #include "glm/gtc/matrix_transform.hpp"
+// #include "glm/gtc/type_ptr.hpp"
+// #include "glm/gtx/rotate_vector.hpp"
+// #include "glm/gtx/vector_angle.hpp"
+// #include "glm/ext/matrix_clip_space.hpp"
+// #include "glm/ext/matrix_transform.hpp"
 #include "emscripten_fetch.hpp"
+#include "utils/MyMath.hpp"
 
 #define MESH_COUNT 4
 
@@ -34,6 +35,9 @@ public:
     GLuint vertex_len;
     std::optional<GLuint> shaderprogram_id;
     std::optional<GLuint> texture_id;
+    Mat4 scale = Mat4::identity();  //this gives us 1x scaling at every axis
+    Quat rotation;
+    Mat4 translation;               
 
     Shape(){
 
@@ -44,10 +48,16 @@ public:
     }
 
     static Shape InitCube(float width, std::string imagePath){
+        float a = width/2.0f; // Half width for vertex positions
+        
         Shape shape;
         shape.shape_type = ShapeType::CUBE;
+        shape.translation = Mat4::identity();
+        shape.translation.data[3] = 0.0f;
+        shape.translation.data[7] = 0.0f;
+        shape.translation.data[11] = 0.0f;
     
-        float a = width/2.0f; // Half width for vertex positions
+        
         
         // Vertices with positions and texture coordinates for each face
         // Format: x, y, z, tex_u, tex_v
@@ -164,30 +174,22 @@ public:
         return shape;
     }
 
-    void SupplyTransformationValues(
-        glm::vec3 rotation_angles,
-        glm::vec3 translation_positions,
-        glm::vec3 scaling_xyz
-    ){
+    void SupplyTransformationValues(Mat4 VP_matrix){
         if (!shaderprogram_id.has_value()){
             std::cout << "There is no shaderprogram assigned to this shape object..." << std::endl;
             return;
         }
         
-        GLint rotation_uniform = glGetUniformLocation(shaderprogram_id.value(), "rotation");
-        GLint translation_uniform = glGetUniformLocation(shaderprogram_id.value(), "translation");
-        GLint scaling_uniform = glGetUniformLocation(shaderprogram_id.value(), "scaling");
+        GLint mvp_matrix_uniform = glGetUniformLocation(shaderprogram_id.value(), "mvp_matrix");
 
         // Check if uniforms were found
-        if (rotation_uniform == -1)
+        if (mvp_matrix_uniform == -1)
             std::cout << "Warning: 'rotation' uniform not found in shader" << std::endl;
-        if (translation_uniform == -1)
-            std::cout << "Warning: 'translation' uniform not found in shader" << std::endl;
-        if (scaling_uniform == -1)
-            std::cout << "Warning: 'scaling' uniform not found in shader" << std::endl;
 
-        glUniform3fv(rotation_uniform, 1, glm::value_ptr(rotation_angles));
-        glUniform3fv(translation_uniform, 1, glm::value_ptr(translation_positions));
-        glUniform3fv(scaling_uniform, 1, glm::value_ptr(scaling_xyz));
+
+        //calculating the MVP matrix on the CPU
+        Mat4 model = translation * rotation.to_matrix() * scale;
+        Mat4 MVP = VP_matrix * model;
+        glUniformMatrix4fv(mvp_matrix_uniform, 1, false, MVP.data);
     }
 };

@@ -50,11 +50,8 @@ void update_camera(Camera* camera) {
         camera->Position += camera->Up * camera->speed;
 }
 
-glm::vec3 movement = glm::vec3(0.0f, 1.0f, 0.0f);
+Vec3 movement = Vec3(0.0f, 1.0f, 0.0f);
 float rotation_speed = 10.0f;
-glm::vec3 rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-glm::vec3 translation = glm::vec3(-2.0f, -2.0f, 0.0f);
-glm::vec3 scaling = glm::vec3(1.0f, 1.5f, 1.0f);
 
 bool is_upwards = true;
 
@@ -65,25 +62,7 @@ void MainLoop(){
 
     //this is just some movement-related example
     frameTime /= 1000;
-    if (translation.y > 2.0f){
-        movement.y = 0.0f;
-        movement.x = 1.0f;
-    }
-    if (translation.x > 2.0f){
-        movement.y = -1.0f;
-        movement.x = 0.0f;
-    }
-    if (translation.y < -2.0f){
-        movement.y = 0.0f;
-        movement.x = -1.0f;
-    }
-    if (translation.x < -2.0f && translation.y < 2.0f){
-        movement.y = 1.0f;
-        movement.x = 0.0f;
-    }
-    translation += movement * (float)frameTime;
 
-    rotation.y += (float)frameTime*rotation_speed;
 
     // std::cout << "current frametime: " << frameTime*1000 << "ms" << std::endl;
 
@@ -92,17 +71,11 @@ void MainLoop(){
 
     update_camera(&program->cam);
 
-    program->cam.SetProjection(100.0f, 0.02, 100.0f);
+    program->cam.SetProjection(100.0f, 0.02f, 100.0f);
 
     program->UseShader(0);
 
-    program->shapes[0].SupplyTransformationValues(
-        rotation,
-        translation,
-        scaling
-    );
-
-    program->cam.UpdateMatrix(program->shapes[0].shaderprogram_id.value(), "cam_matrix");
+    program->shapes[0].SupplyTransformationValues(program->cam.VP_MATRIX);
     
     program->DrawShape(program->shapes[0]);
 
