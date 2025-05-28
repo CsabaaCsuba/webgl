@@ -49,6 +49,7 @@ struct Mat4 {
     
     static Mat4 create(float num);
     Mat4 operator*(Mat4 other);
+    void operator+=(Mat4 other);
     
     static Mat4 create_rotation(float angle_rad, Vec3 axis);
     static Mat4 rotate(Mat4 input_matrix, float angle_rad, Vec3 axis);
@@ -56,6 +57,7 @@ struct Mat4 {
     static Mat4 create_perspective(float FOVRad, float AspectRatio, float near, float far);
     static Mat4 create_view(Vec3 CameraPos, Vec3 TargetPos, Vec3 UpVector);
     static Mat4 identity();
+    static Mat4 from_position(Vec3 position);
 };
 
 // Quat declaration (implementation later)
@@ -239,6 +241,14 @@ Mat4 Mat4::operator*(Mat4 other) {
     return Mat4(result);
 }
 
+void Mat4::operator+=(Mat4 other){
+    for (int col = 0; col<4; col++){
+        for (int row=0; row<4; row++){
+            data[col * 4 + row] += other.data[col * 4 + row];
+        }
+    }
+}
+
 Mat4 Mat4::create_rotation(float angle_rad, Vec3 axis) {
     Vec3 normalized_axis = axis.normalize();
 
@@ -302,6 +312,14 @@ Mat4 Mat4::identity() {
     mat.data[5] = 1.0f;
     mat.data[10] = 1.0f;
     mat.data[15] = 1.0f;
+    return mat;
+}
+
+Mat4 Mat4::from_position(Vec3 position) {
+    Mat4 mat = Mat4::identity();
+    mat.data[3] = position.data[0];
+    mat.data[7] = position.data[1];
+    mat.data[11] = position.data[2];
     return mat;
 }
 

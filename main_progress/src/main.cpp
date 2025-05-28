@@ -35,7 +35,7 @@ double lastTime = 0;
 double currentTime = 0;
 double frameTime = 0;
 
-void update_camera(Camera* camera) {
+void   update_camera(Camera* camera) {
     if (keyStates["KeyW"])
         camera->Position += (camera->Orientation * camera->speed);
     if (keyStates["KeyS"])
@@ -51,9 +51,13 @@ void update_camera(Camera* camera) {
 }
 
 Vec3 movement = Vec3(0.0f, 1.0f, 0.0f);
-float rotation_speed = 10.0f;
+float rotation_speed = 1.0f;
 
 bool is_upwards = true;
+
+
+float velocity_x = 10.0f;
+float velocity_y = 10.0f;
 
 void MainLoop(){
     currentTime = emscripten_get_now();
@@ -61,7 +65,18 @@ void MainLoop(){
     lastTime = currentTime;
 
     //this is just some movement-related example
-    frameTime /= 1000;
+    frameTime /= 10000;
+
+    float rotation_angle = frameTime * rotation_speed * 180.0f / M_PI; // Convert to degrees
+    Vec3 rotation_axis(0, 1, 0); // Y-axis rotation
+
+    Quat frame_rotation = Quat::from_rotation_vector(rotation_angle, rotation_axis);
+    program->shapes[0].rotation = program->shapes[0].rotation * frame_rotation;
+
+    Mat4 incremental_translation = Mat4::identity();
+    incremental_translation.data[3] = frameTime * velocity_x; // X translation
+    incremental_translation.data[7] = frameTime * velocity_y; // Y translation (if needed)
+    program->shapes[0].translation = program->shapes[0].translation * incremental_translation;
 
 
     // std::cout << "current frametime: " << frameTime*1000 << "ms" << std::endl;
