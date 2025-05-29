@@ -51,7 +51,7 @@ void   update_camera(Camera* camera) {
 }
 
 Vec3 movement = Vec3(0.0f, 1.0f, 0.0f);
-float rotation_speed = 1.0f;
+float rotation_speed = 10.0f;
 
 bool is_upwards = true;
 
@@ -74,9 +74,10 @@ void MainLoop(){
     program->shapes[0].rotation = program->shapes[0].rotation * frame_rotation;
 
     Mat4 incremental_translation = Mat4::identity();
-    incremental_translation.data[3] = frameTime * velocity_x; // X translation
-    incremental_translation.data[7] = frameTime * velocity_y; // Y translation (if needed)
-    program->shapes[0].translation = program->shapes[0].translation * incremental_translation;
+    program->shapes[0].position.data[0] += frameTime * velocity_x;
+    program->shapes[0].position.data[1] += frameTime * velocity_y;
+
+    program->shapes[0].save_position();
 
 
     // std::cout << "current frametime: " << frameTime*1000 << "ms" << std::endl;

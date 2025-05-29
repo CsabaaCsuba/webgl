@@ -35,9 +35,10 @@ public:
     GLuint vertex_len;
     std::optional<GLuint> shaderprogram_id;
     std::optional<GLuint> texture_id;
+    Vec3 position;
     Mat4 scale = Mat4::identity();  //this gives us 1x scaling at every axis
     Quat rotation;
-    Mat4 translation;               
+    Mat4 translation;
 
     Shape(){
 
@@ -56,6 +57,7 @@ public:
         shape.translation.data[3] = 0.0f;
         shape.translation.data[7] = 0.0f;
         shape.translation.data[11] = 0.0f;
+        shape.position = Vec3::create(0.0f, 0.0f, 0.0f);
     
         
         
@@ -191,5 +193,12 @@ public:
         Mat4 model = translation * rotation.to_matrix() * scale;
         Mat4 MVP = VP_matrix * model;
         glUniformMatrix4fv(mvp_matrix_uniform, 1, false, MVP.data);
+    }
+
+    void save_position(){
+        translation = Mat4::identity();
+        translation.data[12] = position.data[0]; // Assuming column-major
+        translation.data[13] = position.data[1];
+        translation.data[14] = position.data[2];
     }
 };
