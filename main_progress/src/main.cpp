@@ -78,8 +78,9 @@ void MainLoop(){
     program->shapes[0].position.data[1] += frameTime * velocity_y;
 
     program->shapes[0].save_position();
+    program->shapes[1].save_position();
 
-
+    program->shapes[2].save_position();
     // std::cout << "current frametime: " << frameTime*1000 << "ms" << std::endl;
 
     glClearColor(0.2, 0.2, 0.2, 1.0);
@@ -94,6 +95,10 @@ void MainLoop(){
     program->shapes[0].SupplyTransformationValues(program->cam.VP_MATRIX);
     
     program->DrawShape(program->shapes[0]);
+    program->shapes[1].SupplyTransformationValues(program->cam.VP_MATRIX);
+    program->DrawShape(program->shapes[1]);
+    program->shapes[2].SupplyTransformationValues(program->cam.VP_MATRIX);
+    program->DrawShape(program->shapes[2]);
 
     // eglSwapBuffers(display, surface);
 }
@@ -123,13 +128,19 @@ int main(){
     const std::string texturePath = "textures/cobblestone.jpeg";
     std::cout << "Creating cube with texture: " << texturePath << std::endl;
     Shape myCube = Shape::InitCube(1.5f, texturePath);
+    Shape firstPlain = Shape::InitPlain(5.0f, 5.0f, texturePath);
+    Shape firstSphere = Shape::InitSphere(1.5f, Vec3::create(0.0f, 2.0f, 0.0f), texturePath);
     
     GLuint cubeShader = program->CreateShaderProgram("./shaders/3d.vert", "./shaders/3d.frag");
     std::cout << "Shader program created: " << cubeShader << std::endl;
 
     myCube.AssignShaderProgram(cubeShader);
+    firstPlain.AssignShaderProgram(cubeShader);
+    firstSphere.AssignShaderProgram(cubeShader);
 
     program->AddShape(myCube);
+    program->AddShape(firstPlain);
+    program->AddShape(firstSphere);
 
     glEnable(GL_DEPTH_TEST);
 
