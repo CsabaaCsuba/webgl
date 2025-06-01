@@ -24,6 +24,8 @@
 #include "CanvasManagement.hpp"
 #include "../include/emscripten_fetch.hpp"
 #include "utils/MyMath.hpp"
+#include "TextRenderer.hpp" // The file containing the TextRenderer classes above
+
 
 // Debug utility function to check for OpenGL errors
 void checkGLError(const char* operation) {
@@ -33,18 +35,27 @@ void checkGLError(const char* operation) {
     }
 }
 
+struct FontLoadData {
+    Program* program_instance;
+    std::string font_name;
+};
+
 class Program{
 public:
     float WindowWidth;
     float WindowHeight;
     Camera cam;
     std::vector<Shape> shapes;
+    TextRenderer* text_renderer;
+    std::vector<TextManager*> text_managers;
 
     Program(double WindowWidth, double WindowHeight, Vec3 CameraPosition){
         this->WindowWidth = (float)WindowWidth;
         this->WindowHeight = (float)WindowHeight;
         Camera new_cam((float)WindowWidth, (float)WindowHeight, CameraPosition);
         this->cam = new_cam;
+
+        text_renderer = new TextRenderer();
     }
 
     void AddShape(Shape shape){
@@ -191,5 +202,76 @@ public:
         checkGLError("UseShader.glUseProgram");
     }
 
+
     
+
+    void LoadFont(const char* font_url, const char* font_name) {
+        // Create a struct to hold both the program instance and font name
+        FontLoadData* load_data = new FontLoadData();
+        load_data->program_instance = this;  // 'this' refers to the current Program instance
+        load_data->font_name = std::string(font_name);
+        
+        emscripten_fetch_attr_t attr;
+        emscripten_fetch_attr_init(&attr);
+        strcpy(attr.requestMethod, "GET");
+        attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+        
+        // Store our custom data structure
+        attr.userData = (void*)load_data;
+        
+        attr.onsuccess = [](emscripten_fetch_t *fetch) {
+            FontLoadData* load_data = (FontLoadData*)fetch->userData;
+            Program* program = load_data->program_instance;
+            
+            if (program && program->text_renderer) {
+                // Create TextManager with loaded font data
+                TextManager* text_manager = new TextManager(
+                    (unsigned char*)fetch->data,  // Cast to unsigned char* if needed
+                    fetch->numBytes, 
+                    program->text_renderer,
+                    (int)48 // pixel size
+                );
+                
+                program->text_managers.push_back(text_manager);
+                
+                std::cout << "Font loaded successfully: " << load_data->font_name << std::endl;
+            }
+            
+            // Clean up our custom data structure
+            delete load_data;
+            emscripten_fetch_close(fetch);
+        };
+        
+        attr.onerror = [](emscripten_fetch_t *fetch) {
+            FontLoadData* load_data = (FontLoadData*)fetch->userData;
+            std::cout << "Font loading failed for: " << load_data->font_name << std::endl;
+            
+            // Clean up our custom data structure
+            delete load_data;
+            emscripten_fetch_close(fetch);
+        };
+        
+        emscripten_fetch(&attr, font_url);
+    }
+    
+    void RenderText(size_t font_index, const char* text, float x, float y, float scale, Vec3 color) {
+        if (font_index < text_managers.size() && text_managers[font_index]) {
+            text_managers[font_index]->RenderText(text, x, y, scale, color, WindowWidth, WindowHeight);
+        }
+    }
+    
+    Vec2 GetTextSize(size_t font_index, const char* text, float scale) {
+        if (font_index < text_managers.size() && text_managers[font_index]) {
+            return text_managers[font_index]->GetTextSize(text, scale);
+        }
+        return Vec2::create(0, 0);
+    }
+
+    ~Program(){
+        for (auto* text_manager : text_managers) {
+            delete text_manager;
+        }
+
+        delete text_renderer;
+    }
 };

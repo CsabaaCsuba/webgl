@@ -18,6 +18,8 @@
 #include <vector>
 #include <emscripten/fetch.h>
 #include <string.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 #include "Shape.hpp"
 #include "Camera.hpp"
 #include "CanvasManagement.hpp"
@@ -25,6 +27,10 @@
 #include "Program.hpp"
 #include <optional>
 #include "utils/MyMath.hpp"
+#include "TextRenderer.hpp"
+
+
+
 
 
 Program *program;
@@ -35,7 +41,7 @@ double lastTime = 0;
 double currentTime = 0;
 double frameTime = 0;
 
-void   update_camera(Camera* camera) {
+void update_camera(Camera* camera) {
     if (keyStates["KeyW"])
         camera->Position += (camera->Orientation * camera->speed);
     if (keyStates["KeyS"])
@@ -104,6 +110,30 @@ void MainLoop(){
 }
 
 int main(){
+    FT_Library ft;
+    if (FT_Init_FreeType(&ft))
+    {
+        std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+        return -1;
+    }
+
+    auto data = downloadBinaryContent("include/open-sans/OpenSans-Regular.ttf");
+
+    FT_Face face;
+    if (FT_New_Memory_Face(ft, data.data(), data.size(), 0, &face))
+    {
+        std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;  
+        return -1;
+    }
+
+    FT_Set_Pixel_Sizes(face, 0, 48);
+
+    if (FT_Load_Char(face, 'X', FT_LOAD_RENDER))
+    {
+        std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;  
+        return -1;
+    }
+
     std::cout << "Starting application..." << std::endl;
     EmscriptenWebGLContextAttributes attrs;
     emscripten_webgl_init_context_attributes(&attrs);
