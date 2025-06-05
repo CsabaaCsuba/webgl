@@ -1,5 +1,6 @@
 file="src/${1:-main}.cpp"
-sudo emcc $file -std=c++17 -I../include -O1 -fsanitize=address -fsanitize=undefined -s WASM=1 \
+unset FROZEN_CACHE
+FROZEN_CACHE=0 emcc $file -std=c++17 -I../include -O1 -fsanitize=address -fsanitize=undefined -s WASM=1 \
  -msimd128 \
  -s OFFSCREEN_FRAMEBUFFER=1 -s ASSERTIONS=1 \
  -s USE_WEBGL2=1 -s FULL_ES3=1 -s FETCH=1 -s ASYNCIFY=1 \
