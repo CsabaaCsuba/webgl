@@ -60,3 +60,4 @@ Cargo.lock
 emsdk/
 emsdk
 emsdk/**
+error.log
