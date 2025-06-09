@@ -42,3 +42,8 @@ What does a Game Engine need?
     4. Sound System
     5. Ability to read and write the disk (for writing/reading save files, and reading game data)
     6. Handling Dynamic memory allocation safely.
+
+What is Entity Component System actually?
+    1. Entities: Group of components
+    2. Components: Data
+    3. Systems: Functions

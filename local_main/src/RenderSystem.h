@@ -5,21 +5,25 @@
 #include "types.h"
 #include "shader_compiler.h"
 
-typedef struct RenderItem {
-    uint32_t EntityID;
-    //flags:
-    //  bit 0    |   bit 1   |   bit 2   |   bit 3   |   bit 4  |   bit 5   |   bit 6   |   bit 7   |
-    //  active
-    uint8_t flags;
+typedef struct RenderItems {
+    uint32_t item_count;
+    uint32_t item_cap;
+    uint32_t* entity_ids;
 
-    uint32_t VAO;
-    uint32_t VBO;
-    uint32_t EBO;
-    uint32_t shader_program;
+    uint32_t* VAOs;
+    uint32_t* VBOs;
+    uint32_t* EBOs;
+    uint32_t* shader_programs;
+    uint32_t* vertex_counts;
+    uint32_t* index_counts;
     
-    enum RenderShape shape;
+    enum RenderShape* shapes;
 } RenderItem;
 
-void render_all_items(RenderItem* items){
+void init_render_items(RenderItem* items_ptr, uint32_t item_cap){
+    
+}
+
+void render_all_items(RenderItems* items){
 
 }

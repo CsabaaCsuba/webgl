@@ -9,11 +9,6 @@
 #include <hb.h>
 #include <hb-ft.h>
 
-typedef struct {
-    
-} RenderComponent;
-
-
 //text-rendering related
 typedef struct {
     unsigned int texture_id;
