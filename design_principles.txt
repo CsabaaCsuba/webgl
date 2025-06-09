@@ -1,0 +1,36 @@
+Designing Data-Oriented applications:
+    1. Using Structure of Arrays instead of array of structures
+        -> All the fields of the structure are going to be arrays.
+        -> The structure will have one instance, which will contain the arrays of data points for that component.
+        -> This is for the maximization of CPU cache hits, and minimization of memory alignment bytes (because everything is aligned to 64 bytes)
+        -> When destroying a component, it's index will simply be marked as unused.
+    2. Functions will be used to iterate through the components and make changes to them
+        -> This won't be an issue since every enemy will have the same "traits", and these trait lists will be the same length.
+    3. Memory handling
+        -> Dynamic memory, when needed, will be used with arenas
+        -> 2 types of arenas: default, 1 to 10 megabytes, OR file-handler arenas that will handle one file and will have the size of one file.
+ 
+example:
+    struct EnemyMetaData {
+        uint32 enemy_count
+    }
+    struct Enemy {
+        float enemy_position_x[enemy_count]
+        float enemy_position_y[enemy_count]
+        float enemy_position_z[enemy_count]
+        float enemy_rotation_x[enemy_count]
+        float enemy_rotation_y[enemy_count]
+        float enemy_rotation_z[enemy_count]
+        float enemy_scale_x[enemy_count]
+        float enemy_scale_y[enemy_count]
+        float enemy_scale_z[enemy_count]
+    }
+
+    //separete enemies based on their flags
+    struct Enemy enemies;
+    struct Enemy dead_enemies;
+    initialize_enemies(&enemies);
+    initialize_dead_enemies(&dead_enemies);
+
+    //move_random_enemies is a function
+    add_system(enemies, move_random_enemies);
