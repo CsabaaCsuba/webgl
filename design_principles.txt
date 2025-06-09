@@ -11,25 +11,20 @@ Designing Data-Oriented applications:
         -> 2 types of arenas: default, 1 to 10 megabytes, OR file-handler arenas that will handle one file and will have the size of one file.
  
 example:
-    struct EnemyMetaData {
+    struct EnemiesMetaData {
         uint32 enemy_count
     }
-    struct Enemy {
-        float enemy_position_x[enemy_count]
-        float enemy_position_y[enemy_count]
-        float enemy_position_z[enemy_count]
-        float enemy_rotation_x[enemy_count]
-        float enemy_rotation_y[enemy_count]
-        float enemy_rotation_z[enemy_count]
-        float enemy_scale_x[enemy_count]
-        float enemy_scale_y[enemy_count]
-        float enemy_scale_z[enemy_count]
+    struct Enemies {
+        Vec3 enemy_positions[enemy_count]
+        Vec3 enemy_rotations[enemy_count]
+        Vec3 enemy_scales[enemy_count]
     }
 
     //separete enemies based on their flags
-    struct Enemy enemies;
-    struct Enemy dead_enemies;
-    initialize_enemies(&enemies);
+    struct Enemies enemies;
+    struct Enemies dead_enemies;
+    struct EnemiesMetaData enemy_metadata = {.enemy_count=10};
+    initialize_enemies(&enemies, enemy_metadata.enemy_count);
     initialize_dead_enemies(&dead_enemies);
 
     //move_random_enemies is a function
