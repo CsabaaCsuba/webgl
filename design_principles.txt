@@ -11,13 +11,11 @@ Designing Data-Oriented applications:
         -> 2 types of arenas: default, 1 to 10 megabytes, OR file-handler arenas that will handle one file and will have the size of one file.
  
 example:
-    struct EnemiesMetaData {
+    struct EnemySystem {
         uint32 enemy_count
-    }
-    struct Enemies {
         Vec3 enemy_positions[enemy_count]
         Vec3 enemy_rotations[enemy_count]
-        Vec3 enemy_scales[enemy_count]
+        Vec3 enemy_scales[enemy_count] //this might not even be needed since we might not even scale our enemies
     }
 
     //separete enemies based on their flags
@@ -29,3 +27,18 @@ example:
 
     //move_random_enemies is a function
     add_system(enemies, move_random_enemies);
+
+What does a Game Engine need?
+    1. Graphics rendering
+        -> basic shapes
+        -> model loading
+            --supporting the animation of models
+        -> texturing of different shapes and models
+    2. Physics Engine
+        -> simulating movement
+        -> collision detection
+        -> each game object has a shape as well
+    3. Input in the form of keyboard and mouse (or even joystick support)
+    4. Sound System
+    5. Ability to read and write the disk (for writing/reading save files, and reading game data)
+    6. Handling Dynamic memory allocation safely.
