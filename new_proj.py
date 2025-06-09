@@ -28,6 +28,7 @@ CFLAGS = [
     "-lfreetype",
     "-lharfbuzz",
     "-lm",
+    "-fshort-enums",
 ]
 
 def build():

@@ -1,5 +1,4 @@
 #pragma once
-#include <wasm_simd128.h>
 #include <math.h>
 
 // Forward declarations

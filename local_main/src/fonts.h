@@ -5,26 +5,7 @@
 
 #include <hb.h>
 #include <hb-ft.h>
-
-
-typedef struct {
-    unsigned int texture_id;
-    int size_x, size_y;
-    int bearing_x, bearing_y;
-    unsigned int advance;
-} Character;
-
-typedef struct {
-    Character characters[65536]; // Support for Unicode characters
-    int loaded[65536];
-} FontAtlas;
-
-typedef struct {
-    FT_Library ft;
-    FT_Face face;
-    hb_font_t* hb_font;
-    FontAtlas atlas;
-} Font;
+#include "types.h"
 
 
 int init_font(Font* font, const char* font_path, int font_size) {
@@ -106,10 +87,10 @@ void load_character(Font* font, unsigned int glyph_index) {
     font->atlas.loaded[glyph_index] = 1;
 }
 
-void render_text_hb(Font* font, const char* text, float x, float y, float scale, float color[3]) {
+void render_text_hb(Font* font, Text text, float x, float y, float scale, float color[3]) {
     // Create HarfBuzz buffer
     hb_buffer_t* buf = hb_buffer_create();
-    hb_buffer_add_utf8(buf, text, -1, 0, -1);
+    hb_buffer_add_utf8(buf, text.text, -1, 0, -1);
     hb_buffer_set_direction(buf, HB_DIRECTION_LTR);
     hb_buffer_set_script(buf, HB_SCRIPT_COMMON);
     hb_buffer_set_language(buf, hb_language_from_string("en", -1));
@@ -128,10 +109,10 @@ void render_text_hb(Font* font, const char* text, float x, float y, float scale,
     // printf("Rendering text: '%s' with %u glyphs\n", text, glyph_count);
     
     // Set up OpenGL state
-    glUseProgram(shader_program);
-    glUniform3f(glGetUniformLocation(shader_program, "textColor"), color[0], color[1], color[2]);
+    glUseProgram(text.shader_program);
+    glUniform3f(glGetUniformLocation(text.shader_program, "textColor"), color[0], color[1], color[2]);
     glActiveTexture(GL_TEXTURE0);
-    glBindVertexArray(VAO);
+    glBindVertexArray(text.VAO);
     
     float current_x = x;
     float current_y = y;
@@ -173,7 +154,7 @@ void render_text_hb(Font* font, const char* text, float x, float y, float scale,
         
         // Render glyph texture over quad
         glBindTexture(GL_TEXTURE_2D, ch.texture_id);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, text.VBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glDrawArrays(GL_TRIANGLES, 0, 6);
