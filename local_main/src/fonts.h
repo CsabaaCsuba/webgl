@@ -6,6 +6,8 @@
 #include <hb.h>
 #include <hb-ft.h>
 #include "types.h"
+#include "enums.h"
+#include "MyMath.h"
 
 
 int init_font(Font* font, const char* font_path, int font_size) {
@@ -169,4 +171,34 @@ void render_text_hb(Font* font, Text text, float x, float y, float scale, float 
     
     // Clean up HarfBuzz buffer
     hb_buffer_destroy(buf);
+}
+
+Result init_text(Text* text_ptr, Font font, char* raw_text, uint32_t shader_program){
+    // Set up VAO and VBO
+    glGenVertexArrays(1, &text_ptr->VAO);
+    glGenBuffers(1, &text_ptr->VBO);
+    glBindVertexArray(text_ptr->VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, text_ptr->VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    uint64_t text_len = strlen(raw_text)+1;
+    text_ptr->text = (char*)malloc(text_len);
+    if (text_ptr->text == 0){
+        glDeleteBuffers(1, &text_ptr->VBO);
+        glDeleteVertexArrays(1, &text_ptr->VBO);
+
+        printf("failed to allocate for text copying..\n");
+        return FAIL;
+    }
+
+    strncpy(text_ptr->text, raw_text, text_len-1);
+    text_ptr->text[text_len-1] = '\0';
+    text_ptr->shader_program = shader_program;
+
+    return SUCCESS;
+    
 }

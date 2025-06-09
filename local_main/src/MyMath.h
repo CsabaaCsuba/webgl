@@ -1,6 +1,9 @@
 #pragma once
 #include <math.h>
 #include <stddef.h>
+#ifndef M_PI
+    #define M_PI            3.14159265358979323846
+#endif
 
 #define PI_180 ((float)M_PI / 180.0f)
 
