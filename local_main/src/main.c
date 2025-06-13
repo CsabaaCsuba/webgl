@@ -8,8 +8,10 @@
 #include "types.h"
 #include "fonts.h"
 #include "MyMath.h"
+#include "mem/pool.h"
+#include "mem/arena.h"
 
-#define ARENA_SIZE 1024 * 1024 //1 MB
+// #define ARENA_SIZE 1024 * 1024 //1 MB
 
 void set_text_projection(Mat4 matrix, char* location_name, uint32_t shader_program){
     glUseProgram(shader_program);
@@ -86,8 +88,8 @@ int main() {
     }
     
     if (!font_loaded) {
-        fprintf(stderr, "Failed to load any font. Please install fonts with Unicode support:\n");
-        fprintf(stderr, "  sudo apt install fonts-noto-cjk fonts-dejavu fonts-liberation fonts-ubuntu\n");
+        fprintf(stderr, "Failed to load any font. Please install fonts with Unicode support.\n");
+        // fprintf(stderr, "  sudo apt install fonts-noto-cjk fonts-dejavu fonts-liberation fonts-ubuntu\n");
         return -1;
     }
     
