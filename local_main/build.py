@@ -16,6 +16,9 @@ CFLAGS = [
     "-I/usr/include",
     "-I/usr/include/freetype2",
     "-I/usr/include/harfbuzz",
+    "-Iinclude/flecs",
+    "-Linclude/flecs",
+    # "-llibflecs.a",
     "-L/usr/lib/x86_64-linux-gnu",
     "-lglfw",
     "-lGLESv2",
@@ -23,6 +26,7 @@ CFLAGS = [
     "-lharfbuzz",
     "-lm",
     "-fshort-enums",
+    "./include/flecs/flecs.o",
 ]
 
 def build():

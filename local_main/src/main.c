@@ -10,6 +10,7 @@
 #include "MyMath.h"
 #include "mem/pool.h"
 #include "mem/arena.h"
+#include "flecs.h"
 
 // #define ARENA_SIZE 1024 * 1024 //1 MB
 
@@ -39,7 +40,7 @@ int main() {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
     
     // Create window
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Rotating Cube", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(800, 600, "Engine", NULL, NULL);
     if (!window) {
         fprintf(stderr, "Failed to create GLFW window\n");
         glfwTerminate();
@@ -107,6 +108,17 @@ int main() {
     float red[3] = {1.0f, 0.0f, 0.0f};
 
     Mat4 ortho = Mat4_create_orthographic(0.0f, 800.0f, 0.0f, 600.0f, -1.0f, 1.0f);
+
+    ecs_world_t* world = ecs_init();
+    
+
+    ecs_entity_t e = ecs_new(world);
+    printf("Is alive? %d\n", ecs_is_alive(world, e));
+
+    ecs_delete(world, e);
+    printf("Is alive? %d\n", ecs_is_alive(world, e));
+
+    ecs_fini(world); //this deletes the world
 
     // Main loop
     while (!glfwWindowShouldClose(window)) {

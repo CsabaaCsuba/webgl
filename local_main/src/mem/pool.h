@@ -12,11 +12,11 @@
     } Type##Pool;                                                                 \
                                                                                   \
     static Result Type##Pool_init(Type##Pool* pool, uint32_t elem_count) {        \
-        pool->objects = (Type*)malloc(sizeof(Type) * capacity);                   \
+        pool->objects = (Type*)malloc(sizeof(Type) * elem_count);                   \
         pool->length = 0;                                                         \
-        pool->capacity = capacity;                                                \
-        if (!pool->objects || !pool->in_use) {                                    \
-            free(pool->objects);                                                  \
+        pool->capacity = elem_count;                                                \
+        if (pool->objects == NULL) {                                    \
+            fprintf(stderr,"failed to initialize Type pool...\n");\
             return FAIL;                                                          \
         }                                                                         \
         return SUCCESS;                                                           \

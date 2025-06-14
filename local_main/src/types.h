@@ -9,6 +9,8 @@
 #include <hb.h>
 #include <hb-ft.h>
 
+typedef uint32_t u32;
+
 //text-rendering related
 typedef struct {
     unsigned int texture_id;
