@@ -18,7 +18,6 @@ CFLAGS = [
     "-I/usr/include/harfbuzz",
     "-Iinclude/flecs",
     "-Linclude/flecs",
-    # "-llibflecs.a",
     "-L/usr/lib/x86_64-linux-gnu",
     "-lglfw",
     "-lGLESv2",
