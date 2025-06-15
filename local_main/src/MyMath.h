@@ -11,7 +11,10 @@
 #define PI_180 ((float)M_PI / 180.0f)
 
 typedef struct Vec3 {
-    float data[3];
+    union {
+        struct { float x, y, z; };
+        float data[3];
+    };
 } Vec3;
 
 typedef struct Mat4 {
@@ -19,15 +22,24 @@ typedef struct Mat4 {
 } Mat4;
 
 typedef struct Quat {
-    float data[4];
+    union {
+        struct { float w, x, y, z; };
+        float data[4];
+    };
 } Quat;
 
 typedef struct Vec4 {
-    float data[4];
+    union {
+        struct { float x, y, z, w; };
+        float data[4];
+    };
 } Vec4;
 
 typedef struct Vec2 {
-    float data[2];
+    union {
+        struct { float x, y; };
+        float data[2];
+    };
 } Vec2;
 
 float Q_rsqrt(float number);
@@ -61,6 +73,7 @@ Mat4 Mat4_create_orthographic(float left, float right, float bottom, float top, 
 Mat4 Mat4_create_view(Vec3 CameraPos, Vec3 TargetPos, Vec3 UpVector);
 Mat4 Mat4_identity(void);
 Mat4 Mat4_from_position(Vec3 position);
+Mat4 Mat4_create_model(Vec3 translation, Quat rotation, Vec3 scale);
 
 Quat Quat_create(float w, float x, float y, float z);
 Quat Quat_from_rotation_vector(float rot_deg, Vec3 rot_vector);

@@ -233,6 +233,57 @@ Vec3 Vec3_mul_mat4(Vec3 v, Mat4 m) {
     return Vec3_create(x, y, z);
 }
 
+Mat4 Mat4_create_model(Vec3 translation, Quat rotation, Vec3 scale) {
+    Mat4 result = {0};
+    
+    // Normalize quaternion
+    float length = sqrtf(rotation.x*rotation.x + rotation.y*rotation.y + 
+                        rotation.z*rotation.z + rotation.w*rotation.w);
+    if (length > 0.0f) {
+        rotation.x /= length;
+        rotation.y /= length;
+        rotation.z /= length;
+        rotation.w /= length;
+    }
+    
+    float xx = rotation.x * rotation.x;
+    float yy = rotation.y * rotation.y;
+    float zz = rotation.z * rotation.z;
+    float xy = rotation.x * rotation.y;
+    float xz = rotation.x * rotation.z;
+    float yz = rotation.y * rotation.z;
+    float wx = rotation.w * rotation.x;
+    float wy = rotation.w * rotation.y;
+    float wz = rotation.w * rotation.z;
+    
+    // Combine rotation and scale in one step
+    // Column 0
+    result.data[0] = scale.x * (1.0f - 2.0f * (yy + zz));
+    result.data[1] = scale.x * (2.0f * (xy + wz));
+    result.data[2] = scale.x * (2.0f * (xz - wy));
+    result.data[3] = 0.0f;
+    
+    // Column 1
+    result.data[4] = scale.y * (2.0f * (xy - wz));
+    result.data[5] = scale.y * (1.0f - 2.0f * (xx + zz));
+    result.data[6] = scale.y * (2.0f * (yz + wx));
+    result.data[7] = 0.0f;
+    
+    // Column 2
+    result.data[8] = scale.z * (2.0f * (xz + wy));
+    result.data[9] = scale.z * (2.0f * (yz - wx));
+    result.data[10] = scale.z * (1.0f - 2.0f * (xx + yy));
+    result.data[11] = 0.0f;
+    
+    // Column 3 (translation)
+    result.data[12] = translation.x;
+    result.data[13] = translation.y;
+    result.data[14] = translation.z;
+    result.data[15] = 1.0f;
+    
+    return result;
+}
+
 Quat Quat_identity() {
     return (Quat){ .data = {0.0f, 0.0f, 0.0f, 1.0f} };
 }

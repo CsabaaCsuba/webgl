@@ -1,6 +1,9 @@
 #include "entities.h"
 #include <GLES3/gl3.h>
 
+Mat4 perspective;
+Mat4 view;
+
 ECS_COMPONENT_DECLARE(Position);
 ECS_COMPONENT_DECLARE(Velocity);
 ECS_COMPONENT_DECLARE(Scale);
@@ -11,6 +14,8 @@ ECS_COMPONENT_DECLARE(UpVector);
 ECS_COMPONENT_DECLARE(Target);
 ECS_COMPONENT_DECLARE(FovRad_AR);
 ECS_COMPONENT_DECLARE(Near_Far);
+
+Mat4 transform_matrix;
 
 void Render(ecs_iter_t *it){
     Position* p = ecs_field(it, Position, 1);
@@ -56,7 +61,11 @@ void UseCamera(ecs_world_t* world, uint64_t camera_id) {
         return;
     }
 
-    
+    perspective = Mat4_create_perspective(fov_ar->fov_rad, fov_ar->aspect_ratio, near_far->near, near_far->far);
+
+    view = Mat4_create_view(pos->pos, target->target_position, up->up_vector);
+
+    glUniformMatrix4fv(,1, GL_FALSE, perspective.data);
 
     // Now you can use these components, for example:
     // printf("Using Camera %lu:\n", camera_id);

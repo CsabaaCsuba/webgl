@@ -7,7 +7,7 @@
 #endif
 
 typedef struct {
-    float x, y, z;
+    Vec3 pos;
 } Position, Velocity, Scale;
 
 typedef struct {
